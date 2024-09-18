@@ -12,7 +12,7 @@ function SpotifyCallback() {
 
     if (authorizationCode && codeVerifier) {
       const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-      const redirectUri = "http://localhost:5173/spotify-callback";
+      const redirectUri = "https://mood-flow.web.app/spotify-callback";
 
       const params = new URLSearchParams();
       params.append("client_id", clientId);
