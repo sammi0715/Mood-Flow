@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import { useSpotifyPlayer } from "./SpotifyPlayer";
-
+import { LuPlusCircle, LuCheckCircle } from "react-icons/lu";
 export const SpotifyTracks = ({ onSelectTrack }) => {
   const [tracks, setTracks] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -9,7 +9,7 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
+  const [selectedTracks, setSelectedTracks] = useState({});
   const { player, handleTrackSelect, fetchWithTokenCheck } = useSpotifyPlayer();
 
   useEffect(() => {
@@ -58,6 +58,25 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
       setIsLoading(false);
     }
   };
+  const handleSelectTrackForDiary = (track) => {
+    setSelectedTracks((prevState) => {
+      const isSelected = !prevState[track.id];
+
+      if (isSelected) {
+        console.log(`已選取歌曲: ${track.name}`);
+        onSelectTrack(track);
+      } else {
+        console.log(`取消選擇歌曲: ${track.name}`);
+        onSelectTrack(null);
+      }
+
+      // 更新選取狀態
+      return {
+        ...prevState,
+        [track.id]: isSelected,
+      };
+    });
+  };
 
   const handlePlayPause = async (track) => {
     if (currentTrack?.id === track.id && isPlaying) {
@@ -67,8 +86,6 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
       await handleTrackSelect(track.uri);
       setCurrentTrack(track);
       setIsPlaying(true);
-
-      onSelectTrack(track);
     }
   };
 
@@ -78,18 +95,6 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
 
   return (
     <div className="space-y-4">
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="搜尋歌曲..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="p-2 border border-gray-300 rounded-lg w-full"
-        />
-        <button onClick={handleSearch} className="bg-blue-500 text-white px-4 py-2 rounded-lg mt-2">
-          搜尋
-        </button>
-      </div>
       {/* Search Results Section */}
       <div>
         <h2 className="text-2xl font-semibold mb-4">搜尋結果：</h2>
@@ -114,6 +119,12 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
                 ) : (
                   <IoPlayCircle size={40} className="text-green-500" />
                 )}
+              </button>
+              <button
+                onClick={() => handleSelectTrack(track)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg ml-2"
+              >
+                選取歌曲
               </button>
             </div>
           ))}
@@ -142,6 +153,16 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
                   <IoPauseCircle size={40} className="text-green-500" />
                 ) : (
                   <IoPlayCircle size={40} className="text-green-500" />
+                )}
+              </button>
+              <button
+                onClick={() => handleSelectTrackForDiary(track)}
+                className="text-green-500 ml-2"
+              >
+                {selectedTracks[track.id] ? (
+                  <LuCheckCircle size={40} />
+                ) : (
+                  <LuPlusCircle size={40} />
                 )}
               </button>
             </div>

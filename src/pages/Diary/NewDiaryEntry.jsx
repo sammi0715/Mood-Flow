@@ -14,6 +14,7 @@ import { auth, db } from "../../utills/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { SpotifyTracks } from "../../utills/spotifyTrack";
 import { useSpotifyPlayer } from "../../utills/SpotifyPlayer";
+
 function NewDiaryEntry() {
   const navigate = useNavigate();
   const [selectedTrack, setSelectedTrack] = useState(null);
@@ -27,15 +28,18 @@ function NewDiaryEntry() {
   const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
 
   const handleTrackSelect = (track) => {
-    const simplifiedTrack = {
-      id: track.id,
-      name: track.name,
-      uri: track.uri,
-      artists: track.artists.map((artist) => artist.name),
-      albumImageUrl: track.album.images[0]?.url,
-    };
-
-    setSelectedTrack(simplifiedTrack);
+    if (track === null) {
+      setSelectedTrack(null);
+    } else {
+      const simplifiedTrack = {
+        id: track.id,
+        name: track.name,
+        uri: track.uri,
+        artists: track.artists.map((artist) => artist.name),
+        albumImageUrl: track.album.images[0]?.url,
+      };
+      setSelectedTrack(simplifiedTrack);
+    }
   };
 
   const moods = [
