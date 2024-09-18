@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { fetchDiaries } from "../../utills/firebase-data";
 import { TiThMenu } from "react-icons/ti";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import SpotifyLogin from "../../utills/spotifyLogin";
+import { useSpotifyPlayer } from "../../utills/SpotifyPlayer";
 import moodIcons from "../../utills/moodIcons";
 import {
   format,
@@ -24,13 +24,8 @@ function DiaryCalendar() {
   const [diaries, setDiaries] = useState([]);
   const navigate = useNavigate();
   const throttleTimeout = useRef(null);
-  const [spotifyToken, setSpotifyToken] = useState(null);
-  useEffect(() => {
-    const storedSpotifyToken = localStorage.getItem("spotify_token");
-    if (storedSpotifyToken) {
-      setSpotifyToken(storedSpotifyToken);
-    }
-  }, []);
+
+  const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
 
   useEffect(() => {
     const loadDiaries = async () => {
@@ -150,9 +145,14 @@ function DiaryCalendar() {
         {/* Spotify 按鈕 */}
         <div className="flex-none">
           {!spotifyToken ? (
-            <SpotifyLogin />
+            <button
+              className="bg-green-500 text-white px-4 py-2 rounded-lg"
+              onClick={handleSpotifyLogin}
+            >
+              連結Spotify
+            </button>
           ) : (
-            <button className="bg-green-500 text-white px-4 py-2 rounded-lg">已連接Spotify</button>
+            <button className="bg-green-500 text-white px-4 py-2 rounded-lg">已連結Spotify</button>
           )}
         </div>
       </div>

@@ -12,12 +12,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { auth, db } from "../../utills/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import SpotifyLogin from "../../utills/spotifyLogin";
-import { SpotifyTracks } from "../../utills/spotify-auth";
-
+import { SpotifyTracks } from "../../utills/spotifyTrack";
+import { useSpotifyPlayer } from "../../utills/SpotifyPlayer";
 function NewDiaryEntry() {
   const navigate = useNavigate();
-  const [spotifyToken, setSpotifyToken] = useState(null);
   const [selectedTrack, setSelectedTrack] = useState(null);
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -26,11 +24,7 @@ function NewDiaryEntry() {
   const [diaryContent, setDiaryContent] = useState("");
   const [uploadedImages, setUploadedImages] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem("spotify_token");
-    setSpotifyToken(token);
-  }, []);
+  const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
 
   const handleTrackSelect = (track) => {
     const simplifiedTrack = {
@@ -203,7 +197,16 @@ function NewDiaryEntry() {
 
         <h3 className="text-lg font-semibold mb-4">Music</h3>
 
-        {spotifyToken && <SpotifyTracks onSelectTrack={handleTrackSelect} />}
+        {spotifyToken ? (
+          <SpotifyTracks onSelectTrack={handleTrackSelect} />
+        ) : (
+          <button
+            className="bg-green-500 text-white px-4 py-2 rounded-lg"
+            onClick={handleSpotifyLogin}
+          >
+            連接Spotify
+          </button>
+        )}
 
         <div className="flex justify-center mt-6">
           <button
