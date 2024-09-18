@@ -1,6 +1,6 @@
 function Footer() {
   return (
-    <footer className=" flex w-screen h-12 bg-amber-100 items-center justify-center">
+    <footer className=" fixed bottom-0 flex w-screen h-12 bg-amber-100 items-center justify-center">
       <div className="flex ">
         <p className="mr-12">關於Mood Flow</p>
         <p className="mr-12">服務條款</p>
