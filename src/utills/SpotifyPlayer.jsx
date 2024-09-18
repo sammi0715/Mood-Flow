@@ -116,6 +116,11 @@ export const useSpotifyPlayer = () => {
           console.log("Spotify Player is ready with Device ID", device_id);
           localStorage.setItem("spotify_device_id", device_id);
           setDeviceId(device_id);
+
+          // 播放器準備好後強制將播放進度設置為 0
+          spotifyPlayerInstance.seek(0).then(() => {
+            console.log("Playback reset to start.");
+          });
         });
 
         spotifyPlayerInstance.addListener("not_ready", ({ device_id }) => {
