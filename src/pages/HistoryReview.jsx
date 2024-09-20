@@ -28,6 +28,7 @@ function HistoryReview() {
       try {
         const data = await fetchHistoryData(userId, formattedDate, formattedDate);
         setHistoryData(data);
+        setIsFiltered(true);
       } catch (error) {
         console.error("Error loading history data: ", error);
       }
@@ -56,6 +57,7 @@ function HistoryReview() {
         const data = await fetchHistoryData(userId, startDate, endDate);
         setHistoryData(data);
         setCurrentDiaryIndex(0);
+        setIsFiltered(true);
       } catch (error) {
         console.error("Error fetching diary for date range: ", error);
       }
@@ -77,7 +79,7 @@ function HistoryReview() {
   };
 
   const handlePlayTrack = async (track) => {
-    if (currentTrack?.uri === track.uri && isPlaying) {
+    if (currentTrack?.uri === track.uri) {
       await handlePlayPause();
     } else {
       await handleTrackSelect(track.uri);
@@ -136,7 +138,7 @@ function HistoryReview() {
         {isFiltered ? "歷史回顧" : ` 上個月的今天: ${formattedTitle}`}
       </h1>
       {/* 日記顯示區域 */}
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <button className="mr-4" onClick={handlePrevious} disabled={currentDiaryIndex === 0}>
           <FaChevronCircleLeft />
         </button>
@@ -155,7 +157,7 @@ function HistoryReview() {
               <div className="flex justify-center">
                 <img
                   src={moodIcons[historyData[currentDiaryIndex].mood]}
-                  className="w-16 h-16 rounded-full"
+                  className="w-16 h-16 rounded-lg"
                 />
               </div>
             )}
@@ -167,27 +169,40 @@ function HistoryReview() {
 
             {/* 顯示 Spotify 音樂資訊 */}
             {historyData[currentDiaryIndex].track && (
-              <div className="mt-4">
+              <div>
                 <h4 className="text-lg font-bold">音樂：</h4>
-                <img
-                  src={historyData[currentDiaryIndex].track.albumImageUrl}
-                  alt={historyData[currentDiaryIndex].track.name}
-                  className="w-16 h-16 rounded-full"
-                />
-                <p>{historyData[currentDiaryIndex].track.name}</p>
-                <p>{historyData[currentDiaryIndex].track.artists.join(", ")}</p>
-                {console.log(historyData)}
-                {/* 點擊播放 */}
-                <button
-                  onClick={() => handlePlayTrack(historyData[currentDiaryIndex].track)}
-                  className="text-green-500"
-                >
-                  {isPlaying && currentTrack?.uri === historyData[currentDiaryIndex].track.uri ? (
-                    <IoPauseCircle size={40} />
-                  ) : (
-                    <IoPlayCircle size={40} />
+                <div className="mt-4 p-4 flex items-center space-x-4 bg-gray-100 rounded-lg shadow-md">
+                  <img
+                    src={historyData[currentDiaryIndex].track.albumImageUrl}
+                    alt={historyData[currentDiaryIndex].track.name}
+                    className="w-16 h-16 rounded-full"
+                  />
+                  <div className="flex-1">
+                    <p>{historyData[currentDiaryIndex].track.name}</p>
+                    <p>{historyData[currentDiaryIndex].track.artists.join(", ")}</p>
+                  </div>
+                  {console.log(historyData)}
+
+                  {/* 點擊播放 */}
+                  {console.log(
+                    "isPlaying: ",
+                    isPlaying,
+                    "currentTrack: ",
+                    currentTrack?.uri,
+                    "track: ",
+                    historyData[currentDiaryIndex].track.uri
                   )}
-                </button>
+                  <button
+                    onClick={() => handlePlayTrack(historyData[currentDiaryIndex].track)}
+                    className="text-green-500"
+                  >
+                    {isPlaying && currentTrack?.uri === historyData[currentDiaryIndex].track.uri ? (
+                      <IoPauseCircle size={40} />
+                    ) : (
+                      <IoPlayCircle size={40} />
+                    )}
+                  </button>
+                </div>
               </div>
             )}
           </div>
