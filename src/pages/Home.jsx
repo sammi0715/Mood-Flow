@@ -3,12 +3,15 @@ import { IoClose } from "react-icons/io5";
 import { FaCircleUser } from "react-icons/fa6";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { signUpUser, loginUser, signInWithGoogle } from "../utills/auth";
+import { signUpUser, loginUser, signInWithGoogle, handleSetUsername } from "../utills/auth";
 import { FcGoogle } from "react-icons/fc";
 function Home() {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
   const [selectedImageURL, setSelectedImageURL] = useState(null);
+  const [showSetUsername, setShowSetUsername] = useState(false);
+  const [username, setUsername] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const {
@@ -75,11 +78,29 @@ function Home() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const user = await signInWithGoogle();
-      alert("Google 登入成功！");
-      navigate(`/diary-calendar/${user.uid}`);
+      const result = await signInWithGoogle();
+      const { user, needsUsername } = result;
+
+      if (needsUsername) {
+        // 顯示設定帳號名稱的介面
+        setShowSetUsername(true);
+      } else {
+        alert("Google 登入成功！");
+        navigate(`/diary-calendar/${user.uid}`);
+      }
     } catch (error) {
       alert("Google 登入失敗: " + error.message);
+    }
+  };
+
+  const handleUsernameSubmit = async () => {
+    try {
+      await handleSetUsername(username);
+      alert("帳號名稱設定成功！");
+      setShowSetUsername(false);
+      navigate(`/diary-calendar/${auth.currentUser.uid}`);
+    } catch (error) {
+      setError(error.message);
     }
   };
 
@@ -135,6 +156,33 @@ function Home() {
           </div>
         </div>
       )}
+      {/* 帳號名稱設定彈窗 */}
+      {showSetUsername && (
+        <div className="bg-gray-200 bg-opacity-50 fixed inset-0 flex justify-center items-center">
+          <div className="bg-white p-8 rounded shadow-lg w-96">
+            <div className="flex justify-between">
+              <h2 className="text-2xl mb-3">設定帳號名稱</h2>
+              <IoClose onClick={() => setShowSetUsername(false)} className="h-8 w-8" />
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label>帳號名稱</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="請輸入帳號名稱"
+                  className="border border-gray-300 p-2 w-full rounded"
+                />
+                {error && <p className="text-red-500">{error}</p>}
+              </div>
+              <button onClick={handleUsernameSubmit} className="w-full bg-gray-300 py-2">
+                確認
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 註冊視窗 */}
       {showSignUp && (
@@ -170,11 +218,17 @@ function Home() {
 
             <form onSubmit={handleSignUpSubmit(onSignUp)} className="space-y-4">
               <div>
-                <label>姓名</label>
+                <label>帳號</label>
                 <input
                   type="text"
-                  {...signUpRegister("name", { required: "請輸入姓名" })}
-                  placeholder="姓名"
+                  {...signUpRegister("name", {
+                    required: "請設定帳號",
+                    pattern: {
+                      value: /^[a-zA-Z0-9]{4,15}$/,
+                      message: "帳號名稱必須是 4-15 個字元的英文字母或數字",
+                    },
+                  })}
+                  placeholder="帳號"
                   className="border border-gray-300 p-2 w-full rounded"
                 />
                 {signUpErrors.name && <p className="text-red-500">{signUpErrors.name.message}</p>}
