@@ -9,11 +9,19 @@ import blue from "../../assets/images/blue.png";
 import sad from "../../assets/images/sad.png";
 import cry from "../../assets/images/cry.png";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { auth, db } from "../../utills/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { IoMdCloseCircle } from "react-icons/io";
+import {
+  simplifyTrack,
+  handleImageUpload,
+  handleRemoveImage,
+  getFriendIds,
+} from "../../utills/firebase-data";
 import { SpotifyTracks } from "../../utills/spotifyTrack";
-import { useSpotifyPlayer } from "../../utills/SpotifyPlayer";
+import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
+import Sidebar from "../Sidebar";
 
 function NewDiaryEntry() {
   const navigate = useNavigate();
@@ -26,19 +34,12 @@ function NewDiaryEntry() {
   const [uploadedImages, setUploadedImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
-
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const handleTrackSelect = (track) => {
     if (track === null) {
       setSelectedTrack(null);
     } else {
-      const simplifiedTrack = {
-        id: track.id,
-        name: track.name,
-        uri: track.uri,
-        artists: track.artists.map((artist) => artist.name),
-        albumImageUrl: track.album.images[0]?.url,
-      };
-      setSelectedTrack(simplifiedTrack);
+      setSelectedTrack(simplifyTrack(track));
     }
   };
 
@@ -58,32 +59,6 @@ function NewDiaryEntry() {
 
   const handleDiaryChange = (event) => setDiaryContent(event.target.value);
 
-  const handleImageUpload = (event) => {
-    const files = Array.from(event.target.files);
-    if (files.length + uploadedImages.length > 3) {
-      alert("您最多只能上傳三張圖片。");
-      return;
-    }
-
-    files.forEach((file) => convertToBase64(file));
-  };
-
-  const convertToBase64 = (file) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      setUploadedImages((prevImages) => [...prevImages, reader.result]);
-    };
-    reader.onerror = (error) => {
-      console.error("圖片轉換失敗: ", error);
-      alert("圖片轉換失敗，請重新嘗試。");
-    };
-  };
-
-  const handleRemoveImage = (index) => {
-    setUploadedImages((prevImages) => prevImages.filter((_, i) => i !== index));
-  };
-
   const handleSubmit = async () => {
     if (!selectedMood || !diaryContent.trim()) {
       alert("請選擇一個心情並輸入日記內容。");
@@ -100,6 +75,7 @@ function NewDiaryEntry() {
     }
 
     try {
+      const allowedViewers = await getFriendIds(user.uid);
       const diaryEntry = {
         date: selectedDate,
         mood: selectedMood,
@@ -107,6 +83,7 @@ function NewDiaryEntry() {
         userId: user.uid,
         track: selectedTrack || null,
         imageUrls: uploadedImages.length > 0 ? uploadedImages : null,
+        allowedViewers,
         createdAt: serverTimestamp(),
       };
 
@@ -125,8 +102,15 @@ function NewDiaryEntry() {
   };
 
   return (
-    <div className="p-4">
-      <TiThMenu className="h-8 w-8" />
+    <div className="flex-1 pb-12">
+      <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+
+      <div className="flex-none p-4">
+        <TiThMenu
+          className="h-8 w-8 cursor-pointer text-gray-600 hover:text-gray-800"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        />
+      </div>
       <h1 className="text-3xl font-bold text-center mt-4 mb-4">Today's Mood</h1>
 
       <div className="bg-white rounded-lg shadow-lg p-6">
@@ -167,7 +151,7 @@ function NewDiaryEntry() {
               id="file-upload"
               className="hidden"
               accept="image/jpg,image/jpeg,image/png,image/gif"
-              onChange={handleImageUpload}
+              onChange={(e) => handleImageUpload(e, uploadedImages, setUploadedImages)}
               multiple
             />
             <label htmlFor="file-upload" className="cursor-pointer">
@@ -188,10 +172,10 @@ function NewDiaryEntry() {
                     className="w-full h-32 object-cover rounded-lg"
                   />
                   <button
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    onClick={() => handleRemoveImage(index, setUploadedImages)}
+                    className="absolute top-2 right-2 bg-amber-400 text-white rounded-full"
                   >
-                    &times;
+                    <IoMdCloseCircle className="text-white hover:text-amber-900 w-5 h-5 " />
                   </button>
                 </div>
               ))}
