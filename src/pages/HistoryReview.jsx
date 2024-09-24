@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { subMonths, format } from "date-fns";
 import { fetchHistoryData } from "../utills/firebase-data";
 import { useParams } from "react-router-dom";
-
-import { useSpotifyPlayer } from "../utills/SpotifyPlayer";
+import { useSpotifyPlayer } from "../utills/SpotifyPlayerContext";
 import logo from "../assets/images/logo-3.png";
 import { FaChevronCircleLeft, FaChevronCircleRight } from "react-icons/fa";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
@@ -16,55 +15,96 @@ function HistoryReview() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isFiltered, setIsFiltered] = useState(false);
-  const lastMonthSameDay = subMonths(new Date(), 1);
-  const formattedDate = format(lastMonthSameDay, "yyyy-MM-dd");
-  const formattedTitle = format(lastMonthSameDay, "MMMM dd");
   const { userId } = useParams();
-  const { isPlaying, currentTrack, handlePlayPause, handleTrackSelect, player, spotifyToken } =
-    useSpotifyPlayer();
+  const { isPlaying, currentTrack, handlePlayPause, handleTrackSelect } = useSpotifyPlayer();
+
+  const today = new Date();
 
   useEffect(() => {
     const loadDiaryForLastMonthSameDay = async () => {
+      if (isFiltered) return;
       try {
-        const data = await fetchHistoryData(userId, formattedDate, formattedDate);
+        const lastMonthSameDay = subMonths(today, 1);
+        const data = await fetchHistoryData(
+          userId,
+          format(lastMonthSameDay, "yyyy-MM-dd"),
+          format(lastMonthSameDay, "yyyy-MM-dd")
+        );
         setHistoryData(data);
-        setIsFiltered(true);
       } catch (error) {
         console.error("Error loading history data: ", error);
       }
     };
 
-    loadDiaryForLastMonthSameDay();
-  }, [formattedDate, userId, isFiltered]);
+    if (!isFiltered) {
+      loadDiaryForLastMonthSameDay();
+    }
+  }, [userId, today, isFiltered]);
 
-  // 根據使用者選擇的日期查詢日記
+  const fetchFilteredData = async (startDate, endDate) => {
+    if (!startDate || !endDate) {
+      console.error("Start date or end date is undefined");
+      return;
+    }
+
+    try {
+      setIsFiltered(true);
+      setHistoryData([]);
+      const data = await fetchHistoryData(
+        userId,
+        format(startDate, "yyyy-MM-dd"),
+        format(endDate, "yyyy-MM-dd")
+      );
+      setHistoryData(data);
+    } catch (error) {
+      console.error("Error fetching filtered data:", error);
+    }
+  };
+
+  // 單日期篩選
   const handleSingleDateFilter = async () => {
     if (selectedDate) {
-      try {
-        const data = await fetchHistoryData(userId, selectedDate, selectedDate);
-        setHistoryData(data);
-      } catch (error) {
-        console.error("Error fetching diary for selected date: ", error);
-      }
+      const date = new Date(selectedDate);
+      setIsFiltered(true);
+      fetchFilteredData(date, date);
     } else {
       alert("請選擇日期");
     }
   };
 
-  const handleDateRangeFilter = async () => {
+  const handleDateRangeFilter = () => {
     if (startDate && endDate) {
-      try {
-        const data = await fetchHistoryData(userId, startDate, endDate);
-        setHistoryData(data);
-        setCurrentDiaryIndex(0);
-        setIsFiltered(true);
-      } catch (error) {
-        console.error("Error fetching diary for date range: ", error);
-      }
+      setIsFiltered(true);
+      fetchFilteredData(new Date(startDate), new Date(endDate));
     } else {
-      alert("請選擇完整的日期區間");
+      alert("請選擇完整日期區間");
     }
   };
+  //固定區間
+  const handleFilterChange = async (e) => {
+    const today = new Date();
+    let startDate;
+    let endDate = today;
+
+    switch (e.target.value) {
+      case "lastMonth":
+        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1); // 上個月的第一天
+        endDate = new Date(today.getFullYear(), today.getMonth(), 0); // 上個月的最後一天
+        break;
+      case "lastThreeMonths":
+        startDate = subMonths(today, 3); // 前三個月的開始日期
+        break;
+      case "lastYear":
+        startDate = new Date(today.getFullYear() - 1, 0, 1); // 去年的第一天
+        endDate = new Date(today.getFullYear() - 1, 11, 31); // 去年的最後一天
+        break;
+      default:
+        return;
+    }
+
+    fetchFilteredData(startDate, endDate);
+  };
+
   //左右切換
   const handlePrevious = () => {
     if (currentDiaryIndex > 0) {
@@ -91,7 +131,7 @@ function HistoryReview() {
       <h1 className="text-2xl font-bold mb-4">歷史回顧</h1>
 
       {/* 日期與區間篩選器 */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-around">
         <div className="flex flex-col">
           {/* 單日篩選 */}
           <label className="mb-2">篩選特定日期：</label>
@@ -133,20 +173,32 @@ function HistoryReview() {
             篩選區間
           </button>
         </div>
+
+        <div className="mb-4 flex items-center">
+          <label className="mb-2">篩選條件：</label>
+          <select className="border p-2 ml-2" onChange={handleFilterChange}>
+            <option value="">選擇篩選條件</option>
+            <option value="lastMonth">上個月</option>
+            <option value="lastThreeMonths">前三個月</option>
+            <option value="lastYear">去年</option>
+          </select>
+        </div>
       </div>
+
       <h1 className="text-2xl font-bold mb-4">
-        {isFiltered ? "歷史回顧" : ` 上個月的今天: ${formattedTitle}`}
+        {isFiltered ? "歷史回顧" : ` 上個月的今天: ${format(today, "MMMM dd")}`}
       </h1>
+
       {/* 日記顯示區域 */}
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center">
         <button className="mr-4" onClick={handlePrevious} disabled={currentDiaryIndex === 0}>
-          <FaChevronCircleLeft />
+          <FaChevronCircleLeft className="w-8 h-8" />
         </button>
         {historyData.length > 0 ? (
           <div className="border rounded-lg p-4 w-96">
             <img
               src={
-                historyData[currentDiaryIndex].imageUrls
+                historyData[currentDiaryIndex]?.imageUrls?.length > 0
                   ? historyData[currentDiaryIndex].imageUrls[0]
                   : logo
               }
@@ -181,17 +233,7 @@ function HistoryReview() {
                     <p>{historyData[currentDiaryIndex].track.name}</p>
                     <p>{historyData[currentDiaryIndex].track.artists.join(", ")}</p>
                   </div>
-                  {console.log(historyData)}
 
-                  {/* 點擊播放 */}
-                  {console.log(
-                    "isPlaying: ",
-                    isPlaying,
-                    "currentTrack: ",
-                    currentTrack?.uri,
-                    "track: ",
-                    historyData[currentDiaryIndex].track.uri
-                  )}
                   <button
                     onClick={() => handlePlayTrack(historyData[currentDiaryIndex].track)}
                     className="text-green-500"
@@ -215,7 +257,7 @@ function HistoryReview() {
           disabled={currentDiaryIndex >= historyData.length - 1}
         >
           {" "}
-          <FaChevronCircleRight />
+          <FaChevronCircleRight className="w-8 h-8" />
         </button>
       </div>
     </div>
