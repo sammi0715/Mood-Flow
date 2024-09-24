@@ -4,12 +4,16 @@ import { TiChartBar } from "react-icons/ti";
 import { IoClose } from "react-icons/io5";
 import { IoIosSettings } from "react-icons/io";
 import { fetchUserData } from "../utills/firebase-data";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { BiLogOutCircle } from "react-icons/bi";
+import { signOut } from "firebase/auth";
+import { auth } from "../utills/firebase";
 
 function Sidebar({ isMenuOpen, setIsMenuOpen }) {
   const [userName, setUserName] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const userId = localStorage.getItem("user_uid");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -26,9 +30,22 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
 
     loadUserData();
   }, [userId]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem("user_uid");
+
+      navigate("/");
+      window.location.reload();
+    } catch (error) {
+      console.error("登出失敗:", error);
+    }
+  };
+
   return (
     <div
-      className={`fixed z-10 left-0 w-64 h-screen bg-gray-100 p-6 pl-10 transform transition-transform duration-300 ${
+      className={`fixed z-10 left-0 w-64 h-screen bg-stone-50 p-6 pl-10 transform transition-transform duration-300 ${
         isMenuOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
@@ -53,13 +70,13 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
       <ul>
         <li className="mb-4 flex items-center">
           <FaUser className="mr-2 w-6 h-6" />
-          <Link to="/community" className="text-lg">
+          <Link to={`/community/${userId}`} className="text-lg">
             社群
           </Link>
         </li>
         <li className="mb-4 flex items-center">
           <TiChartBar className="mr-2 w-6 h-6" />
-          <Link to="/mood-track" className="text-lg">
+          <Link to={`/mood-track/${userId}`} className="text-lg">
             心情統計
           </Link>
         </li>
@@ -71,11 +88,22 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
         </li>
         <li className="mb-4 flex items-center">
           <IoIosSettings className="mr-2 w-6 h-6" />
-          <Link to="/settings" className="text-lg">
+          <Link to={`/settings/${userId}`} className="text-lg">
             設定
           </Link>
         </li>
       </ul>
+
+      {/* 登出按鈕 */}
+      <div className="absolute bottom-36 left-6 align-center">
+        <button
+          onClick={handleLogout}
+          className=" text-black px-4 py-2 rounded-md hover:bg-gray-200 transition flex items-center "
+        >
+          <BiLogOutCircle className="mr-2" />
+          登出
+        </button>
+      </div>
     </div>
   );
 }
