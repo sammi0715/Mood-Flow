@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchDiaries } from "../../utills/firebase-data";
+import { fetchDiaries, fetchUserData } from "../../utills/firebase-data";
 import { TiThMenu } from "react-icons/ti";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { useSpotifyPlayer } from "../../utills/SpotifyPlayer";
+import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
 import moodIcons from "../../utills/moodIcons";
+import Sidebar from "../Sidebar";
 import {
   format,
   addMonths,
@@ -24,7 +25,7 @@ function DiaryCalendar() {
   const [diaries, setDiaries] = useState([]);
   const navigate = useNavigate();
   const throttleTimeout = useRef(null);
-
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
 
   useEffect(() => {
@@ -47,7 +48,6 @@ function DiaryCalendar() {
     }
   }, [userId]);
 
-  // 處理點擊日期格子的邏輯
   const handleDateClick = (day) => {
     const formattedDate = format(day, "yyyy-MM-dd");
 
@@ -124,50 +124,60 @@ function DiaryCalendar() {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        {/* 左側的 menu icon */}
-        <div className="flex-none">
-          <TiThMenu className="h-8 w-8 cursor-pointer text-gray-600 hover:text-gray-800" />
-        </div>
+    <div className="flex h-screen">
+      {/* Sidebar */}
+      <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
 
-        {/* 中間的年份和月份 */}
-        <div className="flex-grow text-center flex items-center justify-center">
-          <button onClick={prevMonth} className="mr-4">
-            <FiChevronLeft className="h-6 w-6 text-gray-500 hover:text-gray-700" />
-          </button>
-          <h2 className="text-2xl font-bold">{format(currentDate, "MMMM yyyy")}</h2>
-          <button onClick={nextMonth} className="ml-4">
-            <FiChevronRight className="h-6 w-6 text-gray-500 hover:text-gray-700" />
-          </button>
-        </div>
-
-        {/* Spotify 按鈕 */}
-        <div className="flex-none">
-          {!spotifyToken ? (
-            <button
-              className="bg-green-500 text-white px-4 py-2 rounded-lg"
-              onClick={handleSpotifyLogin}
-            >
-              連結Spotify
-            </button>
-          ) : (
-            <button className="bg-green-500 text-white px-4 py-2 rounded-lg">已連結Spotify</button>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-7 gap-4 text-center">
-        {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((day) => (
-          <div key={day} className="text-gray-500 font-semibold">
-            {day}
+      <div className="flex-1 p-4">
+        <div className="flex items-center justify-between mb-6">
+          {/* 左側的 menu icon */}
+          <div className="flex-none">
+            <TiThMenu
+              className="h-8 w-8 cursor-pointer text-gray-600 hover:text-gray-800"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            />
           </div>
-        ))}
-      </div>
 
-      {/* 日曆 */}
-      <div className="grid grid-cols-7 gap-4 text-center mt-2" onWheel={handleWheel}>
-        {renderDays()}
+          {/* 中間的年份和月份 */}
+          <div className="flex-grow text-center flex items-center justify-center">
+            <button onClick={prevMonth} className="mr-4">
+              <FiChevronLeft className="h-6 w-6 text-gray-500 hover:text-gray-700" />
+            </button>
+            <h2 className="text-2xl font-bold">{format(currentDate, "MMMM yyyy")}</h2>
+            <button onClick={nextMonth} className="ml-4">
+              <FiChevronRight className="h-6 w-6 text-gray-500 hover:text-gray-700" />
+            </button>
+          </div>
+
+          {/* Spotify 按鈕 */}
+          <div className="flex-none">
+            {!spotifyToken ? (
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded-lg"
+                onClick={handleSpotifyLogin}
+              >
+                連結Spotify
+              </button>
+            ) : (
+              <button className="bg-green-500 text-white px-4 py-2 rounded-lg">
+                已連結Spotify
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-4 text-center">
+          {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((day) => (
+            <div key={day} className="text-gray-500 font-semibold">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* 日曆 */}
+        <div className="grid grid-cols-7 gap-4 text-center mt-2" onWheel={handleWheel}>
+          {renderDays()}
+        </div>
       </div>
     </div>
   );
