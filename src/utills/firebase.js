@@ -1,8 +1,8 @@
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, setDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs, getDoc, where, deleteDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, setDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs, getDoc, where, deleteDoc, updateDoc, } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-
+import { getStorage } from "firebase/storage";
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_APP_FIREBASE_API_KEY,
     authDomain: "mood-flow.firebaseapp.com",
@@ -18,4 +18,5 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-export { db, auth, collection, addDoc, setDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs, getDoc, where, deleteDoc, updateDoc }
+const storage = getStorage(app);
+export { db, auth, collection, addDoc, setDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs, getDoc, where, deleteDoc, updateDoc, storage, getStorage }
