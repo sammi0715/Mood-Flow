@@ -127,11 +127,14 @@ export const fetchHistoryData = async (userId, startDate, endDate) => {
         const diariesRef = collection(db, "diaries");
 
 
+        const start = format(new Date(startDate), "yyyy-MM-dd");
+        const end = format(new Date(endDate), "yyyy-MM-dd");
+
         const q = query(
             diariesRef,
             where("userId", "==", userId),
-            where("date", ">=", startDate),
-            where("date", "<=", endDate),
+            where("date", ">=", start),
+            where("date", "<=", end),
             orderBy("date", "desc")
         );
 
@@ -147,6 +150,7 @@ export const fetchHistoryData = async (userId, startDate, endDate) => {
         throw error;
     }
 };
+
 
 export const simplifyTrack = (track) => {
     return {
@@ -278,6 +282,8 @@ export const fetchDiariesWithMoodStats = async (userId, startDate, endDate) => {
             where("date", "<=", format(endDate, "yyyy-MM-dd")), // 結束日期
             orderBy("date", "asc")
         );
+        console.log("Start Date: ", format(startDate, "yyyy-MM-dd"));
+        console.log("End Date: ", format(endDate, "yyyy-MM-dd"));
 
         const diarySnapshot = await getDocs(q);
 
@@ -299,12 +305,13 @@ export const fetchDiariesWithMoodStats = async (userId, startDate, endDate) => {
             date: diary.date, // 假設 date 是 YYYY-MM-DD 格式
             mood: diary.mood, // 直接保留中文心情名稱
         }));
-
+        console.log(trendData);
         return {
             diaries: diaryData,
             moodStats,
             trendData, // 返回趨勢圖的資料
         };
+
     } catch (error) {
         console.error("Error fetching diaries: ", error);
         throw error;
@@ -381,7 +388,7 @@ export const sendFriendRequest = async (senderId, targetUser) => {
     }
 };
 
-// 搜尋使用者名稱
+
 export const searchUserByName = async (searchQuery) => {
     try {
         const usersRef = collection(db, "users");
@@ -396,12 +403,11 @@ export const searchUserByName = async (searchQuery) => {
 
 
 
-
 export const acceptFriendRequest = async (senderId, receiverId) => {
     try {
         const batch = writeBatch(db);
 
-        // 获取双方的用户数据
+
         const senderData = await fetchUserData(senderId);
         const receiverData = await fetchUserData(receiverId);
 
@@ -423,7 +429,16 @@ export const acceptFriendRequest = async (senderId, receiverId) => {
             addedAt: serverTimestamp(),
         });
 
-
+        const friendRequestQuery = query(
+            collection(db, `users/${receiverId}/friend_requests`),
+            where("userId", "==", senderId),
+            where("status", "==", "pending")
+        );
+        const requestSnapshot = await getDocs(friendRequestQuery);
+        requestSnapshot.forEach((requestDoc) => {
+            const requestRef = doc(db, `users/${receiverId}/friend_requests/${requestDoc.id}`);
+            batch.update(requestRef, { status: "accept" });
+        });
         await batch.commit();
 
         console.log("雙方已成為好友！");
@@ -432,12 +447,6 @@ export const acceptFriendRequest = async (senderId, receiverId) => {
         throw error;
     }
 };
-
-
-
-
-
-
 
 export const deleteFriendRequest = async (userId, requestId) => {
     try {
@@ -508,6 +517,29 @@ export const getFriendIds = async (userId) => {
     }
 };
 
+// 刪除好友
+export const deleteFriend = async (currentUserId, friendId) => {
+    try {
+        console.log("Current User ID:", currentUserId);
+        console.log("Friend ID:", friendId);
+        const batch = writeBatch(db);
+
+
+        const currentUserFriendRef = doc(db, `users/${currentUserId}/friends/${friendId}`);
+        batch.delete(currentUserFriendRef);
+
+
+        const friendUserRef = doc(db, `users/${friendId}/friends/${currentUserId}`);
+        batch.delete(friendUserRef);
+
+        await batch.commit();
+        console.log(`成功刪除好友 ${friendId}`);
+    } catch (error) {
+        console.error("刪除好友時發生錯誤:", error);
+        throw error;
+    }
+};
+
 
 // 實時監聽好友列表
 export const listenToFriends = (userId, callback) => {
@@ -533,7 +565,65 @@ export const listenToFriendRequests = (userId, callback) => {
     return unsubscribe;
 };
 
+
 export const markRequestAsRead = async (userId, requestId) => {
     const requestRef = doc(db, `users/${userId}/friend_requests/${requestId}`);
     await updateDoc(requestRef, { isRead: true });
+};
+
+// 新增留言
+export const addComment = async (diaryId, comment) => {
+    try {
+        const currentUser = auth.currentUser;
+        const commentsRef = collection(db, `diaries/${diaryId}/comments`);
+        await addDoc(commentsRef, {
+            userId: currentUser.uid,
+            content: comment,
+            createdAt: serverTimestamp(),
+        });
+        console.log("留言添加成功！");
+    } catch (error) {
+        console.error("添加留言時發生錯誤:", error);
+        throw error;
+    }
+};
+
+
+// 獲取日記的所有留言
+export const fetchComments = async (diaryId) => {
+    try {
+        const commentsRef = collection(db, `diaries/${diaryId}/comments`);
+        const q = query(commentsRef, orderBy("createdAt", "asc"));
+        const commentsSnapshot = await getDocs(q);
+        const comments = commentsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+        return comments;
+    } catch (error) {
+        console.error("獲取留言時發生錯誤:", error);
+        throw error;
+    }
+};
+
+// 更新愛心按讚狀態
+export const toggleLikeDiary = async (diaryId, currentLikes) => {
+    try {
+        const diaryRef = doc(db, "diaries", diaryId);
+        const userId = auth.currentUser.uid;
+        let updatedLikes = currentLikes;
+
+
+        if (currentLikes.includes(userId)) {
+            updatedLikes = currentLikes.filter(id => id !== userId);
+        } else {
+            updatedLikes = [...currentLikes, userId];
+        }
+
+        await updateDoc(diaryRef, { likes: updatedLikes });
+        console.log("按讚狀態更新成功！");
+    } catch (error) {
+        console.error("更新按讚狀態時發生錯誤:", error);
+        throw error;
+    }
 };
