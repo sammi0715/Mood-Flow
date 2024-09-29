@@ -37,49 +37,50 @@ export const SpotifyPlayerProvider = ({ children }) => {
   const [spotifyToken, setSpotifyToken] = useState(() => localStorage.getItem("spotify_token"));
 
   const navigate = useNavigate();
+  const initializePlayer = useCallback(() => {
+    if (player || !spotifyToken) return;
 
-  // 初始化 Spotify SDK 和 Player
-  useEffect(() => {
-    const initialize = () => {
-      if (window.Spotify && spotifyToken) {
-        const existingDeviceId = localStorage.getItem("spotify_device_id");
+    const newPlayer = new window.Spotify.Player({
+      name: "My Web Player",
+      getOAuthToken: (cb) => cb(spotifyToken),
+    });
 
-        if (!player) {
-          const newPlayer = new window.Spotify.Player({
-            name: "My Web Player",
-            getOAuthToken: (cb) => cb(spotifyToken),
-          });
+    newPlayer.addListener("ready", ({ device_id }) => {
+      localStorage.setItem("spotify_device_id", device_id);
+      setDeviceId(device_id);
+      console.log("Spotify Player is ready with Device ID", device_id);
+    });
 
-          newPlayer.addListener("ready", ({ device_id }) => {
-            localStorage.setItem("spotify_device_id", device_id);
-            setDeviceId(device_id);
-          });
-
-          newPlayer.addListener("not_ready", ({ device_id }) => {
-            console.warn("Spotify Player is not ready with Device ID", device_id);
-          });
-
-          newPlayer.connect();
-          setPlayer(newPlayer);
-        } else if (existingDeviceId) {
-          setDeviceId(existingDeviceId);
-        }
+    newPlayer.addListener("not_ready", ({ device_id }) => {
+      console.warn("Spotify Player is not ready with Device ID", device_id);
+    });
+    newPlayer.addListener("player_state_changed", (state) => {
+      if (!state) {
+        return;
       }
-    };
+      setIsPlaying(!state.paused);
+      setCurrentTrack(state.track_window.current_track);
+    });
 
-    if (!window.Spotify) {
+    newPlayer.connect();
+    setPlayer(newPlayer);
+  }, [spotifyToken, player]);
+
+  useEffect(() => {
+    if (window.Spotify) {
+      initializePlayer();
+    } else {
+      window.onSpotifyWebPlaybackSDKReady = () => {
+        console.log("Spotify Web Playback SDK is ready.");
+        initializePlayer();
+      };
+
       const script = document.createElement("script");
       script.src = "https://sdk.scdn.co/spotify-player.js";
       script.async = true;
-      script.onload = initialize;
-      script.onerror = () => {
-        console.error("Failed to load Spotify SDK");
-      };
       document.body.appendChild(script);
-    } else {
-      initialize();
     }
-  }, [spotifyToken, player]);
+  }, [initializePlayer]);
 
   useEffect(() => {
     const checkToken = async () => {
@@ -111,7 +112,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
     localStorage.removeItem("spotify_device_id");
 
     const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-    const redirectUri = "https://mood-flow.web.app/spotify-callback";
+    const redirectUri = "http://localhost:5173/spotify-callback";
 
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
@@ -149,7 +150,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
     }
 
     const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-    const redirectUri = "https://mood-flow.web.app/spotify-callback";
+    const redirectUri = "http://localhost:5173/spotify-callback";
 
     const params = new URLSearchParams({
       client_id: clientId,
@@ -282,7 +283,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
     } catch (error) {
       console.error("播放/暫停音樂時發生錯誤：", error);
     }
-  }, [player, isPlaying]);
+  }, [player, isPlaying, deviceId]);
 
   const transferPlaybackToDevice = useCallback(
     async (deviceIdToTransfer) => {
@@ -353,6 +354,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
     player,
     deviceId,
     isPlaying,
+    setIsPlaying,
     currentTrack,
     setCurrentTrack,
     handlePlayPause,
@@ -362,6 +364,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
     refreshToken,
     exchangeToken,
     fetchWithTokenCheck,
+    initializePlayer,
   };
 
   return (
