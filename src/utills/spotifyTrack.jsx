@@ -7,11 +7,20 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
   const [tracks, setTracks] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentTrack, setCurrentTrack] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTracks, setSelectedTracks] = useState({});
-  const { player, handleTrackSelect, fetchWithTokenCheck } = useSpotifyPlayer();
+  const {
+    player,
+    handleTrackSelect,
+    fetchWithTokenCheck,
+    isPlaying,
+    setIsPlaying,
+    currentTrack,
+    setCurrentTrack,
+    spotifyToken,
+    deviceId,
+    initializePlayer,
+  } = useSpotifyPlayer();
 
   useEffect(() => {
     const fetchTopTracks = async () => {
@@ -61,27 +70,43 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
     }
   };
   const handleSelectTrackForDiary = (track) => {
-    setSelectedTracks(() => {
-      console.log(`已選取歌曲: ${track.name}`);
-      onSelectTrack(track);
-      console.log(track);
-
-      return {
-        [track.id]: true,
-      };
+    setSelectedTracks({
+      [track.id]: true,
     });
+    console.log(`已選取歌曲: ${track.name}`);
+    onSelectTrack(track);
+    console.log(track);
   };
 
   const handlePlayPause = async (track) => {
+    if (!spotifyToken) {
+      alert("請先登入 Spotify。");
+      return;
+    }
+
+    if (!player) {
+      initializePlayer();
+    }
+
+    await waitForSpotifyPlayerReady();
+
     if (currentTrack?.id === track.id && isPlaying) {
-      setIsPlaying(false);
       await player.pause();
     } else {
       await handleTrackSelect(track.uri);
-      setCurrentTrack(track);
-      console.log(track);
-      setIsPlaying(true);
     }
+  };
+  const waitForSpotifyPlayerReady = () => {
+    return new Promise((resolve) => {
+      const checkPlayer = () => {
+        if (player && deviceId) {
+          resolve();
+        } else {
+          setTimeout(checkPlayer, 100);
+        }
+      };
+      checkPlayer();
+    });
   };
 
   if (isLoading) {
@@ -109,22 +134,22 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
           {searchResults.map((track) => (
             <div
               key={track.id}
-              className="bg-gray-900 text-white p-4 rounded-lg shadow-lg flex items-center space-x-4"
+              className="bg-gray-900 text-white p-4 w-full rounded-lg shadow-lg flex items-center space-x-3"
             >
               <img
                 src={track.album.images[0].url}
                 alt={track.name}
-                className="w-24 h-24 rounded-full"
+                className="w-12 h-12 lg:w-24 lg:h-24 rounded-full"
               />
               <div className="flex-1">
-                <p className="text-xl font-semibold">{track.name}</p>
+                <p className="text-sm lg:text-xl font-semibold">{track.name}</p>
                 <p className="text-sm text-gray-400">{track.artists[0].name}</p>
               </div>
               <button onClick={() => handlePlayPause(track)}>
                 {currentTrack?.id === track.id && isPlaying ? (
-                  <IoPauseCircle size={40} className="text-green-500" />
+                  <IoPauseCircle className="text-green-500 ml-2 w-8 h-8 lg:w-10 lg:h-10" />
                 ) : (
-                  <IoPlayCircle size={40} className="text-green-500" />
+                  <IoPlayCircle className="text-green-500 ml-2 w-8 h-8 lg:w-10 lg:h-10" />
                 )}
               </button>
               <button
@@ -132,9 +157,9 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
                 className="text-green-500 ml-2"
               >
                 {selectedTracks[track.id] ? (
-                  <LuCheckCircle size={40} />
+                  <LuCheckCircle className="text-green-500 ml-2 w-8 h-8 lg:w-10 lg:h-10" />
                 ) : (
-                  <LuPlusCircle size={40} />
+                  <LuPlusCircle className="text-green-500 ml-2 w-8 h-8 lg:w-10 lg:h-10" />
                 )}
               </button>
             </div>
@@ -148,32 +173,29 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
           {tracks.map((track) => (
             <div
               key={track.id}
-              className="bg-gray-900 text-white p-4 rounded-lg shadow-lg flex items-center space-x-4"
+              className="bg-gray-900 text-white p-4 w-full rounded-lg shadow-lg flex items-center space-x-3"
             >
               <img
                 src={track.album.images[0].url}
                 alt={track.name}
-                className="w-24 h-24 rounded-full"
+                className="w-12 h-12 lg:w-24 lg:h-24 rounded-full"
               />
               <div className="flex-1">
-                <p className="text-xl font-semibold">{track.name}</p>
-                <p className="text-sm text-gray-400">{track.artists[0].name}</p>
+                <p className="text-sm lg:text-xl font-semibold">{track.name}</p>
+                <p className="text-xs text-gray-400">{track.artists[0].name}</p>
               </div>
               <button onClick={() => handlePlayPause(track)}>
                 {currentTrack?.id === track.id && isPlaying ? (
-                  <IoPauseCircle size={40} className="text-green-500" />
+                  <IoPauseCircle className="text-green-500 w-8 h-8 lg:w-10 lg:h-10" />
                 ) : (
-                  <IoPlayCircle size={40} className="text-green-500" />
+                  <IoPlayCircle className="text-green-500 w-8 h-8 lg:w-10 lg:h-10" />
                 )}
               </button>
-              <button
-                onClick={() => handleSelectTrackForDiary(track)}
-                className="text-green-500 ml-2"
-              >
+              <button onClick={() => handleSelectTrackForDiary(track)}>
                 {selectedTracks[track.id] ? (
-                  <LuCheckCircle size={40} />
+                  <LuCheckCircle className="text-green-500 ml-2 w-8 h-8 lg:w-10 lg:h-10" />
                 ) : (
-                  <LuPlusCircle size={40} />
+                  <LuPlusCircle className="text-green-500 ml-2 w-8 h-8 lg:w-10 lg:h-10" />
                 )}
               </button>
             </div>
