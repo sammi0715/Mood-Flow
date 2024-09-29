@@ -33,30 +33,20 @@ function ViewDiaryEntry() {
   const [uploadedImages, setUploadedImages] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const { isPlaying, currentTrack, handlePlayPause, handleTrackSelect, player, spotifyToken } =
-    useSpotifyPlayer();
+  const {
+    isPlaying,
+    setIsPlaying,
+    currentTrack,
+    handlePlayPause,
+    handleTrackSelect,
+    player,
+    spotifyToken,
+    deviceId,
+    initializePlayer,
+  } = useSpotifyPlayer();
+
   const userId = localStorage.getItem("user_uid");
   const moodOptions = ["開心", "快樂", "興奮", "平靜", "焦慮", "生氣", "憂鬱", "悲傷", "哭泣"];
-
-  const handleResetTrack = async () => {
-    if (player && currentTrack) {
-      try {
-        await player.pause();
-
-        await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=0`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${spotifyToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        await handleTrackSelect(diary.track.uri);
-      } catch (error) {
-        console.error("重置音樂播放時發生錯誤: ", error);
-      }
-    }
-  };
 
   useEffect(() => {
     const fetchDiary = async () => {
@@ -67,13 +57,10 @@ function ViewDiaryEntry() {
         if (diarySnap.exists()) {
           const diaryData = diarySnap.data();
           setDiary(diarySnap.data());
-          setUpdatedContent(diarySnap.data().content); // 初始化編輯框的內容
-          setUpdatedMood(diarySnap.data().mood); // 初始化心情
-          setUpdatedTrack(diarySnap.data().track); // 初始化音樂
-          setUpdatedImages(diaryData.imageUrls || []); // 初始化已儲存的圖片
-          if (diarySnap.data().track) {
-            handleResetTrack();
-          }
+          setUpdatedContent(diarySnap.data().content);
+          setUpdatedMood(diarySnap.data().mood);
+          setUpdatedTrack(diarySnap.data().track);
+          setUpdatedImages(diaryData.imageUrls || []);
         } else {
           console.log("No such document!");
           alert("找不到該日記條目。");
@@ -93,13 +80,37 @@ function ViewDiaryEntry() {
   }, [diaryId, navigate]);
 
   const handlePlayButton = async () => {
-    if (currentTrack) {
-      await handlePlayPause();
-    } else {
-      await handleTrackSelect(diary.track.uri);
+    if (!spotifyToken) {
+      alert("請先登錄 Spotify。");
+      return;
+    }
+
+    if (!player) {
+      initializePlayer();
+    }
+
+    await waitForSpotifyPlayerReady();
+
+    if (diary && diary.track) {
+      if (currentTrack?.uri === diary.track.uri) {
+        await handlePlayPause();
+      } else {
+        await handleTrackSelect(diary.track.uri);
+      }
     }
   };
-
+  const waitForSpotifyPlayerReady = () => {
+    return new Promise((resolve) => {
+      const checkPlayer = () => {
+        if (player && deviceId) {
+          resolve();
+        } else {
+          setTimeout(checkPlayer, 100);
+        }
+      };
+      checkPlayer();
+    });
+  };
   const handleSave = async () => {
     const allImages = [...updatedImages, ...uploadedImages];
     const updatedData = {
@@ -152,15 +163,21 @@ function ViewDiaryEntry() {
       <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
       <div className="flex items-center justify-between mb-6">
         <div className="flex-none">
-          <TiThMenu className="h-8 w-8 cursor-pointer" onClick={() => setIsMenuOpen(!isMenuOpen)} />
+          <TiThMenu
+            className="h-6 w-6 lg:h-8 lg:w-8 cursor-pointer"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          />
         </div>
 
         <div className="flex-grow text-center">
-          <h2 className="text-2xl font-bold">Diary Entry</h2>
+          <h2 className="text-2xl font-bold ">Diary Entry</h2>
         </div>
         <div className="flex-none">
           {isEditing && (
-            <button onClick={handleSave} className="bg-blue-500 text-white p-2 rounded">
+            <button
+              onClick={handleSave}
+              className="bg-amber-400 text-white px-2 text-sm lg:text-base rounded"
+            >
               保存
             </button>
           )}
@@ -324,7 +341,7 @@ function ViewDiaryEntry() {
                   <p className="text-sm text-gray-400">{diary.track.artists.join(", ")} </p>
                 </div>
                 <button onClick={handlePlayButton}>
-                  {isPlaying ? (
+                  {isPlaying && currentTrack?.uri === diary.track.uri ? (
                     <IoPauseCircle size={40} className="text-green-500" />
                   ) : (
                     <IoPlayCircle size={40} className="text-green-500" />
