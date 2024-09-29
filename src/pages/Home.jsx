@@ -105,23 +105,29 @@ function Home() {
   };
 
   return (
-    <div className="relative w-full h-screen bg-mood-flow-banner bg-cover bg-center">
-      <div className="absolute bottom-16 w-full flex flex-col justify-center items-center">
-        <button onClick={handleLoginClick} className="w-48 h-16 bg-orange-200">
+    <div className="relative w-full h-screen lg:bg-mood-flow-banner xl:bg-mood-flow-banner bg-mobile-mood-flow-banner bg-cover bg-center">
+      <div className="absolute bottom-40 lg:bottom-32 w-full flex flex-col justify-center items-center">
+        <button onClick={handleLoginClick} className="w-32 h-12 xl:w-48 xl:h-16 bg-orange-200">
           登入
         </button>
         <div className="flex flex-col items-center justify-center mt-4">
           <p className="text-sm text-center text-gray-700">或使用以下</p>
-          <FcGoogle className="h-8 w-8 mt-2 cursor-pointer" onClick={handleGoogleSignIn} />
+          <FcGoogle
+            className="h-6 w-6  xl:h-8 xl:w-8 mt-2 cursor-pointer"
+            onClick={handleGoogleSignIn}
+          />
         </div>
-        <button onClick={handleSignUpClick} className="w-48 h-16 bg-amber-200 mt-9">
+        <button
+          onClick={handleSignUpClick}
+          className="w-32 h-12 xl:w-48 xl:h-16 bg-amber-200 mt-4 xl:mt-9"
+        >
           註冊
         </button>
       </div>
       {/* 登入視窗 */}
       {showLogin && (
         <div className="bg-gray-200 bg-opacity-50 fixed inset-0 flex justify-center items-center">
-          <div className="bg-white p-8 rounded shadow-lg w-96">
+          <div className="bg-white p-8 rounded shadow-lg w-80 lg:w-96">
             <div className="flex justify-between">
               <h2 className="text-2xl mb-3">登入</h2>
               <IoClose onClick={closeModal} className="h-8 w-8" />
@@ -149,7 +155,7 @@ function Home() {
                   <p className="text-red-500">{loginErrors.password.message}</p>
                 )}
               </div>
-              <button type="submit" className="w-full bg-gray-300 py-2">
+              <button type="submit" className="w-full bg-amber-200 py-2">
                 登入
               </button>
             </form>
@@ -187,7 +193,7 @@ function Home() {
       {/* 註冊視窗 */}
       {showSignUp && (
         <div className="bg-gray-200 bg-opacity-50 fixed inset-0 flex justify-center items-center">
-          <div className="bg-white p-8 rounded shadow-lg w-96">
+          <div className="bg-white p-8 rounded shadow-lg  w-80 lg:w-96">
             <div className="flex justify-between">
               <h2 className="text-2xl mb-3">註冊</h2>
               <IoClose onClick={closeModal} className="h-8 w-8" />
@@ -258,7 +264,7 @@ function Home() {
                   <p className="text-red-500">{signUpErrors.password.message}</p>
                 )}
               </div>
-              <button type="submit" className="w-full bg-gray-300 py-2">
+              <button type="submit" className="w-full bg-orange-200 py-2">
                 註冊
               </button>
             </form>
