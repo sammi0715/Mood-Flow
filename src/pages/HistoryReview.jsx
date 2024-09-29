@@ -3,14 +3,11 @@ import { subMonths, format } from "date-fns";
 import { fetchHistoryData } from "../utills/firebase-data";
 import { useParams } from "react-router-dom";
 import { useSpotifyPlayer } from "../utills/SpotifyPlayerContext";
-import logo from "../assets/images/logo-3.png";
-import { FaChevronCircleLeft, FaChevronCircleRight } from "react-icons/fa";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import moodIcons from "../utills/moodIcons";
 
 function HistoryReview() {
   const [historyData, setHistoryData] = useState([]);
-  const [currentDiaryIndex, setCurrentDiaryIndex] = useState(0);
   const [selectedDate, setSelectedDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -105,19 +102,6 @@ function HistoryReview() {
     fetchFilteredData(startDate, endDate);
   };
 
-  //左右切換
-  const handlePrevious = () => {
-    if (currentDiaryIndex > 0) {
-      setCurrentDiaryIndex((prevIndex) => prevIndex - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentDiaryIndex < historyData.length - 1) {
-      setCurrentDiaryIndex((prevIndex) => prevIndex + 1);
-    }
-  };
-
   const handlePlayTrack = async (track) => {
     if (currentTrack?.uri === track.uri) {
       await handlePlayPause();
@@ -127,56 +111,38 @@ function HistoryReview() {
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">歷史回顧</h1>
+    <div className="p-4 sm:p-8">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4">歷史回顧</h1>
 
       {/* 日期與區間篩選器 */}
-      <div className="mb-4 flex items-center justify-around">
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col">
-          {/* 單日篩選 */}
-          <label className="mb-2">篩選特定日期：</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="border p-2 mb-4"
-          />
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={handleSingleDateFilter}
-          >
-            篩選日期
-          </button>
-        </div>
-
-        <div className="flex flex-col">
-          {/* 區間篩選 */}
-          <label className="mb-2">篩選日期區間：</label>
+          <label className="mb-2 text-sm sm:text-base">篩選日期區間：</label>
           <div className="flex">
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="border p-2 mr-2"
+              className="border p-2 mr-2 rounded-lg"
             />
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="border p-2"
+              className="border p-2 rounded-lg"
             />
           </div>
           <button
-            className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
+            className="bg-amber-400  lg:w-[300px] text-white px-4 py-2 rounded-lg mt-4 hover:bg-amber-600 transition"
             onClick={handleDateRangeFilter}
           >
             篩選區間
           </button>
         </div>
 
-        <div className="mb-4 flex items-center">
-          <label className="mb-2">篩選條件：</label>
-          <select className="border p-2 ml-2" onChange={handleFilterChange}>
+        <div className="flex flex-col">
+          <label className="mb-2 text-sm sm:text-base">篩選條件：</label>
+          <select className="border p-2 rounded-lg " onChange={handleFilterChange}>
             <option value="">選擇篩選條件</option>
             <option value="lastMonth">上個月</option>
             <option value="lastThreeMonths">前三個月</option>
@@ -185,80 +151,80 @@ function HistoryReview() {
         </div>
       </div>
 
-      <h1 className="text-2xl font-bold mb-4">
-        {isFiltered ? "歷史回顧" : ` 上個月的今天: ${format(today, "MMMM dd")}`}
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6">
+        {isFiltered ? "回顧內容" : `上個月的今天: ${format(today, "MMMM dd")}`}
       </h1>
 
       {/* 日記顯示區域 */}
-      <div className="flex items-center justify-center">
-        <button className="mr-4" onClick={handlePrevious} disabled={currentDiaryIndex === 0}>
-          <FaChevronCircleLeft className="w-8 h-8" />
-        </button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 lg:flex lg:flex-col min-h[200px]">
         {historyData.length > 0 ? (
-          <div className="border rounded-lg p-4 w-96">
-            <img
-              src={
-                historyData[currentDiaryIndex]?.imageUrls?.length > 0
-                  ? historyData[currentDiaryIndex].imageUrls[0]
-                  : logo
-              }
-              alt="Diary"
-              className="mb-4"
-            />
-            {historyData[currentDiaryIndex].mood && (
-              <div className="flex justify-center">
-                <img
-                  src={moodIcons[historyData[currentDiaryIndex].mood]}
-                  className="w-16 h-16 rounded-lg"
-                />
-              </div>
-            )}
-            <h3 className="text-lg font-bold">
-              {format(new Date(historyData[currentDiaryIndex].date), "yyyy-MM-dd")}
-            </h3>
-
-            <p className="mb-4">{historyData[currentDiaryIndex].content}</p>
-
-            {/* 顯示 Spotify 音樂資訊 */}
-            {historyData[currentDiaryIndex].track && (
-              <div>
-                <h4 className="text-lg font-bold">音樂：</h4>
-                <div className="mt-4 p-4 flex items-center space-x-4 bg-gray-100 rounded-lg shadow-md">
+          historyData.map((diary, index) => (
+            <div
+              key={index}
+              className="border rounded-lg p-4 bg-white shadow-lg flex flex-col lg:flex-row"
+            >
+              {/* 左側心情圖標與文字 */}
+              <div className="flex flex-col lg:flex-row flex-grow lg:w-2/3 ">
+                {/* 心情圖標 */}
+                <div className="flex items-start mr-4">
                   <img
-                    src={historyData[currentDiaryIndex].track.albumImageUrl}
-                    alt={historyData[currentDiaryIndex].track.name}
-                    className="w-16 h-16 rounded-full"
+                    src={moodIcons[diary.mood]}
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full"
+                    alt="Mood"
                   />
-                  <div className="flex-1">
-                    <p>{historyData[currentDiaryIndex].track.name}</p>
-                    <p>{historyData[currentDiaryIndex].track.artists.join(", ")}</p>
-                  </div>
+                </div>
+                {/* 日期與日記內容 */}
+                <div className="flex flex-col">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">
+                    {diary.date ? format(new Date(diary.date), "yyyy-MM-dd") : "無有效日期"}
+                  </h3>
+                  <p className="mb-4 text-sm sm:text-base">{diary.content}</p>
+                  {/* 音樂區域 */}
+                  {diary.track && (
+                    <div className="mt-2">
+                      <h4 className="text-lg font-bold mb-2">音樂：</h4>
+                      <div className="p-4 xl:w-[480px] sm:w-[300px] flex items-center space-x-4 bg-gray-100 rounded-lg shadow-md sm:mb-2">
+                        <img
+                          src={diary.track.albumImageUrl}
+                          alt={diary.track.name}
+                          className="w-12 h-12 sm:w-16 sm:h-16 rounded-full"
+                        />
+                        <div className="flex-1 text-sm sm:text-base">
+                          <p>{diary.track.name}</p>
+                          <p>{diary.track.artists.join(", ")}</p>
+                        </div>
 
-                  <button
-                    onClick={() => handlePlayTrack(historyData[currentDiaryIndex].track)}
-                    className="text-green-500"
-                  >
-                    {isPlaying && currentTrack?.uri === historyData[currentDiaryIndex].track.uri ? (
-                      <IoPauseCircle size={40} />
-                    ) : (
-                      <IoPlayCircle size={40} />
-                    )}
-                  </button>
+                        <button
+                          onClick={() => handlePlayTrack(diary.track)}
+                          className="text-green-500"
+                        >
+                          {isPlaying && currentTrack?.uri === diary.track.uri ? (
+                            <IoPauseCircle size={32} />
+                          ) : (
+                            <IoPlayCircle size={32} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* 右側圖片區域 */}
+              {diary.imageUrls?.[0] && (
+                <div className="w-full h-40 lg:w-48 lg:h-48 overflow-hidden rounded-lg lg:ml-4">
+                  <img
+                    src={diary.imageUrls?.[0]}
+                    alt="Diary"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          ))
         ) : (
-          <p>目前沒有日記記錄。</p>
+          <p className="col-span-full text-center">目前沒有日記記錄。</p>
         )}
-        <button
-          className="ml-4"
-          onClick={handleNext}
-          disabled={currentDiaryIndex >= historyData.length - 1}
-        >
-          {" "}
-          <FaChevronCircleRight className="w-8 h-8" />
-        </button>
       </div>
     </div>
   );
