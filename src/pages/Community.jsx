@@ -2,18 +2,20 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   fetchFriends,
-  fetchFriendRequests,
-  sendFriendRequest,
-  searchUserByName,
   acceptFriendRequest,
   deleteFriendRequest,
-  fetchDiaries,
   fetchDiariesWithPermission,
   fetchUserData,
   listenToFriends,
   listenToFriendRequests,
+  addComment,
+  fetchComments,
+  toggleLikeDiary,
+  deleteFriend,
 } from "../utills/firebase-data";
 import moodIcons from "../utills/moodIcons";
+import { FaRegHeart, FaHeart, FaRegComment } from "react-icons/fa";
+import { IoIosClose } from "react-icons/io";
 import { auth } from "../utills/firebase";
 function Community() {
   const [friends, setFriends] = useState([]);
@@ -24,6 +26,11 @@ function Community() {
   const [searchResults, setSearchResults] = useState([]);
   const [loadingDiaries, setLoadingDiaries] = useState(false);
   const [error, setError] = useState(null);
+  const [commentTexts, setCommentTexts] = useState("");
+  const [diaryComments, setDiaryComments] = useState({});
+  const [likeStatuses, setLikeStatuses] = useState({});
+  const [showCommentInput, setShowCommentInput] = useState({});
+  const [userProfiles, setUserProfiles] = useState({});
   const { userId } = useParams();
 
   useEffect(() => {
@@ -50,6 +57,12 @@ function Community() {
         try {
           const diaries = await fetchDiariesWithPermission(userId, selectedFriend.userId);
           setSelectedFriendDiaries(diaries);
+          diaries.forEach(async (diary) => {
+            const comments = await fetchComments(diary.id);
+            setDiaryComments((prev) => ({ ...prev, [diary.id]: comments }));
+
+            setLikeStatuses((prev) => ({ ...prev, [diary.id]: diary.likes || [] }));
+          });
         } catch (err) {
           console.error("獲取好友日記出錯:", err);
           setError("獲取好友日記出錯，請稍後再試。");
@@ -74,29 +87,6 @@ function Community() {
     } catch (err) {
       console.error("獲取數據時出錯：", err);
       setError("獲取好友資料時出錯，請稍後再試。");
-    }
-  };
-
-  // 處理搜尋
-  const handleSearch = async () => {
-    if (searchQuery.trim() === "") return;
-    try {
-      const results = await searchUserByName(searchQuery);
-      setSearchResults(results);
-    } catch (err) {
-      console.error("搜尋使用者時出錯：", err);
-      setError("搜尋使用者時出錯，請稍後再試。");
-    }
-  };
-
-  // 發送好友邀請
-  const handleSendFriendRequest = async (targetUser) => {
-    try {
-      await sendFriendRequest(userId, targetUser);
-      alert("好友邀請已發送！");
-    } catch (err) {
-      console.error("發送好友邀請失敗：", err);
-      setError("發送好友邀請失敗，請稍後再試。");
     }
   };
 
@@ -125,6 +115,22 @@ function Community() {
     }
   };
 
+  const handleDeleteFriend = async (friendId) => {
+    const confirmDelete = window.confirm("確定要刪除這位好友嗎？");
+    if (confirmDelete) {
+      try {
+        await deleteFriend(userId, friendId);
+        alert("好友已刪除");
+        // 更新好友列表
+        const updatedFriends = friends.filter((friend) => friend.id !== friendId);
+        setFriends(updatedFriends);
+      } catch (error) {
+        console.error("刪除好友時發生錯誤:", error);
+        alert("刪除好友時發生錯誤，請稍後再試。");
+      }
+    }
+  };
+
   // 拒絕好友邀請
   const handleRejectFriendRequest = async (requestId) => {
     try {
@@ -135,20 +141,78 @@ function Community() {
       setError("刪除好友邀請失敗，請稍後再試。");
     }
   };
+  // 處理留言
+  const handleAddComment = async (diaryId) => {
+    const commentText = commentTexts[diaryId];
+    if (!commentText?.trim()) return;
+    if (!auth.currentUser) {
+      alert("請先登入才能執行此操作");
+      return;
+    }
+    try {
+      await addComment(diaryId, commentText);
+      const updatedComments = await fetchComments(diaryId);
+      setDiaryComments((prev) => ({ ...prev, [diaryId]: updatedComments }));
+      setCommentTexts((prev) => ({ ...prev, [diaryId]: "" }));
+    } catch (error) {
+      console.error("添加留言時出錯:", error);
+    }
+  };
+
+  const handleToggleCommentInput = (diaryId) => {
+    setShowCommentInput((prev) => ({
+      ...prev,
+      [diaryId]: !prev[diaryId], // 切換顯示/隱藏
+    }));
+  };
+
+  // 處理按讚
+  const handleToggleLike = async (diaryId) => {
+    try {
+      const currentLikes = likeStatuses[diaryId] || [];
+      await toggleLikeDiary(diaryId, currentLikes);
+      const updatedLikes = currentLikes.includes(auth.currentUser.uid)
+        ? currentLikes.filter((id) => id !== auth.currentUser.uid)
+        : [...currentLikes, auth.currentUser.uid];
+      setLikeStatuses((prev) => ({ ...prev, [diaryId]: updatedLikes }));
+    } catch (error) {
+      console.error("更新按讚狀態時出錯:", error);
+    }
+  };
+  // 處理留言框輸入
+  const handleCommentTextChange = (diaryId, text) => {
+    setCommentTexts((prev) => ({ ...prev, [diaryId]: text }));
+  };
+
+  const fetchUserProfile = async (userId) => {
+    if (!userProfiles[userId]) {
+      const userProfile = await fetchUserData(userId);
+      setUserProfiles((prev) => ({
+        ...prev,
+        [userId]: userProfile,
+      }));
+    }
+  };
 
   return (
     <div className="min-h-screen flex">
       {/* 左側：好友列表 */}
-      <div className="w-60 bg-gray-100 p-4">
-        <h2 className="text-xl font-bold mb-4">好友列表</h2>
+      <div className="w-28 lg:w-60 bg-gray-100 p-4">
+        <h2 className="text-base lg:text-xl font-bold mb-4">好友列表</h2>
         <ul>
           {friends.map((friend) => (
             <li
               key={friend.id}
-              className="cursor-pointer p-2 hover:bg-gray-300"
+              className="cursor-pointer p-[4px] lg:p-2 hover:bg-gray-300 hover:rounded-md items-center flex justify-between"
               onClick={() => handleSelectFriend(friend)}
             >
               {friend.name}
+              <button
+                className="ml-2 text-white rounded "
+                onClick={() => handleDeleteFriend(friend.id)}
+              >
+                <IoIosClose className="text-gray-500 w-4 h-4 lg:w-6 lg:h-6" />
+              </button>
             </li>
           ))}
         </ul>
@@ -158,7 +222,7 @@ function Community() {
       <div className="flex-1 p-4 overflow-auto">
         {/* 好友邀請通知 */}
         <div className="mb-6">
-          <h2 className="text-xl font-bold">好友邀請</h2>
+          <h2 className="text-lg  lg:text-xl font-bold">好友邀請</h2>
           <ul>
             {friendRequests.length > 0 ? (
               friendRequests.map((request) => (
@@ -181,7 +245,7 @@ function Community() {
                 </li>
               ))
             ) : (
-              <p>暫無好友邀請。</p>
+              <p className="text-sm lg:text-base">暫無好友邀請～</p>
             )}
           </ul>
         </div>
@@ -189,7 +253,7 @@ function Community() {
         {/* 好友日記動態 */}
         {selectedFriend ? (
           <div>
-            <h2 className="text-xl mb-4">{selectedFriend.name} 的日記動態</h2>
+            <h2 className="text-lg lg:text-xl mb-4 ">{selectedFriend.name} 的日記動態</h2>
             {loadingDiaries ? (
               <p>正在載入日記...</p>
             ) : error ? (
@@ -215,18 +279,91 @@ function Community() {
                       <img src={moodIcons[diary.mood]} alt={diary.mood} className="w-6 h-6 mr-2" />
                       <p>{diary.mood}</p>
                     </div>
-                    <p>{diary.content}</p>
+                    <p className="text-sm lg:text-base">{diary.content}</p>
 
-                    <p className="text-sm text-gray-500"> {diary.date}</p>
+                    <p className="text-xs lg:text-sm text-right text-gray-500"> {diary.date}</p>
+                    <div className="flex items-center space-x-4">
+                      {" "}
+                      <button
+                        onClick={() => handleToggleLike(diary.id)}
+                        className="text-red-600 rounded flex items-center"
+                      >
+                        {likeStatuses[diary.id]?.includes(auth.currentUser.uid) ? (
+                          <FaHeart />
+                        ) : (
+                          <FaRegHeart />
+                        )}
+                        <span className="ml-2">{likeStatuses[diary.id]?.length || 0}</span>{" "}
+                      </button>
+                      <button
+                        className="text-black flex items-center"
+                        onClick={() => handleToggleCommentInput(diary.id)}
+                      >
+                        <FaRegComment />
+                        <span className="ml-2">{diaryComments[diary.id]?.length || 0}</span>
+                      </button>
+                    </div>
+
+                    {/* Comments */}
+
+                    <ul className="mt-4">
+                      {diaryComments[diary.id]?.map((comment) => {
+                        if (!userProfiles[comment.userId]) {
+                          fetchUserProfile(comment.userId);
+                        }
+                        const userProfile = userProfiles[comment.userId] || {};
+                        return (
+                          <li key={comment.id} className="mb-2 p-2 bg-gray-100 rounded">
+                            <div className="flex items-center mb-1">
+                              {userProfile.profile_pic ? (
+                                <img
+                                  src={userProfile.profile_pic}
+                                  alt={`${userProfile.name} profile`}
+                                  className="w-6 h-6 rounded-full mr-2"
+                                />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-gray-300 mr-2"></div>
+                              )}
+                              <p className="text-sm lg:text-base font-bold mr-2">
+                                {userProfile.name || "Loading..."}
+                              </p>
+                              <p className="text-xs lg:text-sm text-gray-500">
+                                {comment.createdAt?.toDate().toLocaleString()}
+                              </p>
+                            </div>
+                            <p className="text-sm lg:text-base">{comment.content}</p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+
+                    {/* Add Comment */}
+                    {showCommentInput[diary.id] && (
+                      <div className="mt-2">
+                        <input
+                          type="text"
+                          placeholder="輸入留言..."
+                          value={commentTexts[diary.id] || ""}
+                          onChange={(e) => handleCommentTextChange(diary.id, e.target.value)}
+                          className="border p-2 w-full"
+                        />
+                        <button
+                          onClick={() => handleAddComment(diary.id)}
+                          className="mt-2 p-1 bg-amber-500 text-white rounded text-xs"
+                        >
+                          送出
+                        </button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p>這位好友還沒有日記。</p>
+              <p>這位好友還沒有日記～</p>
             )}
           </div>
         ) : (
-          <p>請選擇一位好友以查看他們的日記動態。</p>
+          <p>請選擇一位好友以查看他們的日記動態！</p>
         )}
 
         {/* 錯誤訊息顯示 */}
