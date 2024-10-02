@@ -187,7 +187,7 @@ function ViewDiaryEntry() {
         </div>{" "}
         <h3 className="text-xl text-center font-semibold mb-4">{diary.date}</h3>
         {isEditing ? (
-          <div className="flex-grow">
+          <div className="flex-grow max-w-4xl mx-auto">
             <div className="mb-6">
               {/* 顯示選擇的心情圖標 */}
               {updatedMood && (
@@ -310,9 +310,9 @@ function ViewDiaryEntry() {
             )}
           </div>
         ) : (
-          <div>
+          <div className="max-w-4xl mx-auto">
             <div className="flex items-center mb-4">
-              <img src={moodIcons[diary.mood]} alt={diary.mood} className="h-10 w-10 mr-2" />
+              <img src={moodIcons[diary.mood]} alt={diary.mood} className="h-14 w-14 mr-2" />
               <span className="text-lg">{diary.mood}</span>
             </div>
             <p className="text-gray-700 mb-6">{diary.content}</p>
@@ -331,17 +331,18 @@ function ViewDiaryEntry() {
             {diary.track && (
               <div className="mt-10">
                 <h4 className="text-lg font-semibold mb-4">Music</h4>
-                <div className="flex items-center space-x-4 mb-10">
+                <div className="flex h-28 p-2 items-center space-x-4  mb-10  bg-gray-100 rounded-lg shadow-md">
                   <img
                     src={diary.track.albumImageUrl}
                     alt={diary.track.name}
-                    className="w-24 h-24 rounded-full"
+                    className="w-20 h-20 md:w-24 md:h-24 rounded-full"
                   />
                   <div className="flex-1">
-                    <p className="text-xl font-semibold">{diary.track.name}</p>
+                    <p className="text-base md:text-xl font-semibold">{diary.track.name}</p>
                     <p className="text-sm text-gray-400">{diary.track.artists.join(", ")} </p>
                   </div>
-                  <button onClick={handlePlayButton}>
+
+                  <button onClick={handlePlayButton} className="p-4">
                     {isPlaying && currentTrack?.uri === diary.track.uri ? (
                       <IoPauseCircle size={40} className="text-green-500" />
                     ) : (
