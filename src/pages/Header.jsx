@@ -155,7 +155,7 @@ function Header() {
   const shouldHideIcons = location.pathname === "/";
 
   return (
-    <header className="w-screen sticky z-10 top-0 h-[60px] lg:h-[90px] bg-light-yellow py-4 px-6 flex justify-between items-center">
+    <header className="w-screen sticky z-30 top-0 h-[60px] lg:h-[90px] bg-light-yellow py-4 px-6 flex justify-between items-center">
       <div className="flex items-center">
         <img
           src={logo}
@@ -180,7 +180,7 @@ function Header() {
 
             {/* 通知下拉菜單 */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-72 z-10 bg-white shadow-lg p-4 rounded-lg notification-box">
+              <div className="absolute right-0 mt-2 w-72 z-40 bg-white shadow-lg p-4 rounded-lg notification-box">
                 <h4 className="text-lg font-bold mb-2">通知</h4>
                 <p className="text-sm mb-2 text-gray-600">點擊通知將其標記為已讀</p>
                 {friendRequests.length > 0 ? (
@@ -207,7 +207,7 @@ function Header() {
 
         {/* 搜尋框，當 isSearchOpen 為 true 時顯示 */}
         {isSearchOpen && user && (
-          <div className="z-10 absolute top-12 right-0 bg-white shadow-lg p-2 rounded w-[300px] search-box">
+          <div className="z-40 absolute top-12 right-0 bg-white shadow-lg p-2 rounded w-[300px] search-box">
             <input
               type="text"
               value={searchQuery}

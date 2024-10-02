@@ -48,7 +48,7 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
     <>
       {isMenuOpen && (
         <div
-          className="fixed inset-0 bg-black opacity-50 z-10 top-[60px] lg:top-[90px]"
+          className="fixed inset-0 bg-black opacity-50 z-20 top-[60px] lg:top-[90px]"
           onClick={() => setIsMenuOpen(false)}
         ></div>
       )}
