@@ -1,18 +1,7 @@
 @font-face {
-  font-family: "FakePearl-Regular";
-  src: url(https://cdn.jsdelivr.net/gh/max32002/FakePearl@1.1/webfont/FakePearl-Regular.woff2)
-      format("woff2"),
-    url(https://cdn.jsdelivr.net/gh/max32002/FakePearl@1.1/webfont/FakePearl-Regular.woff)
-      format("woff");
-}
-
-@font-face {
-  font-family: "FakePearl-Medium";
-  src: url(https://cdn.jsdelivr.net/gh/max32002/FakePearl@1.1/webfont/FakePearl-Medium.woff2)
-      format("woff2"),
-    url(https://cdn.jsdelivr.net/gh/max32002/FakePearl@1.1/webfont/FakePearl-Medium.woff)
-      format("woff");
-  font-weight: 500;
+  font-family: "allseto";
+  src: url("/src/assets/fonts/allseto.ttf") format("truetype");
+  font-weight: normal;
   font-style: normal;
 }
 
@@ -21,9 +10,5 @@
 @tailwind utilities;
 
 body {
-  font-family: "FakePearl-Regular", sans-serif;
-}
-
-.font-PearlMedium {
-  font-family: "FakePearl-Medium", sans-serif;
+  font-family: "allseto", sans-serif;
 }
