@@ -19,15 +19,15 @@ import { startOfWeek, startOfMonth, startOfYear, endOfToday, endOfWeek } from "d
 import { TiThMenu } from "react-icons/ti";
 import Sidebar from "../pages/Sidebar";
 const moodColorMap = {
-  哭泣: "#7e7097",
-  悲傷: "#575974",
-  生氣: "#ba0a0a",
-  憂鬱: "#93cffd",
-  焦慮: "#eb3e3e",
-  平靜: "#64cab8",
-  快樂: "#f49135",
-  興奮: "#ec7c85",
-  開心: "#f7f584",
+  哭泣: "#c4b6e6",
+  悲傷: "#d0b0b5",
+  生氣: "#df0836",
+  憂鬱: "#bbd5f3",
+  焦慮: "#f87171",
+  平靜: "#bfebbe",
+  快樂: "#f0b26f",
+  興奮: "#efaea5",
+  開心: "#f4e098",
 };
 
 const moodCategories = {
@@ -148,7 +148,7 @@ const MoodTrack = () => {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex flex-col min-h-screen">
       <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
 
       <div className="flex-1 p-8">
@@ -157,7 +157,7 @@ const MoodTrack = () => {
             className="w-6 h-6 lg:h-8 lg:w-8 mr-4 cursor-pointer text-gray-600 hover:text-gray-800"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           />
-          <h2 className="text-xl lg:text-2xl ml-4">心情統計</h2>
+          <h2 className="text-2xl lg:text-3xl">心情統計</h2>
         </div>
 
         {/* 選擇篩選條件 */}
@@ -178,16 +178,13 @@ const MoodTrack = () => {
           <h2 className="text-xl lg:text-2xl mb-4 text-left">心情分佈</h2>
           <div className="flex flex-col items-center mb-10 w-full">
             {moodData.length > 0 ? (
-              <ResponsiveContainer
-                width="100%"
-                height={window.innerWidth < 640 ? 300 : 400} // 在小螢幕下調整高度
-              >
+              <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 350 : 450}>
                 <PieChart>
                   <Pie
                     data={moodData}
                     cx="50%"
                     cy="50%"
-                    outerRadius={window.innerWidth < 640 ? 50 : 120} // 調整外半徑以適應小螢幕
+                    outerRadius={window.innerWidth < 640 ? 50 : 120}
                     label={renderCustomLabel}
                     dataKey="value"
                   >
@@ -201,7 +198,13 @@ const MoodTrack = () => {
                       name,
                     ]}
                   />
-                  <Legend />
+
+                  <Legend
+                    layout="horizontal"
+                    verticalAlign="bottom"
+                    align="center"
+                    wrapperStyle={{ marginTop: "20px" }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -215,8 +218,8 @@ const MoodTrack = () => {
         <div className="border border-black rounded-lg p-6 ">
           <h2 className="text-xl lg:text-2xl mb-4">心情趨勢</h2>
           {trendData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400} className="ml-4">
-              <ScatterChart>
+            <ResponsiveContainer width="100%" height={400} className="">
+              <ScatterChart width={90}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
@@ -226,6 +229,8 @@ const MoodTrack = () => {
                   }
                 />
                 <YAxis
+                  className="text-xs xl:text-base"
+                  width={85}
                   dataKey="moodLevel"
                   name="Mood"
                   ticks={[1, 2, 3]}
@@ -237,7 +242,6 @@ const MoodTrack = () => {
                     };
                     return moodLabels[value] || "";
                   }}
-                  width={90}
                 />
 
                 <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: "3 3" }} />
@@ -247,6 +251,7 @@ const MoodTrack = () => {
                   payload={Object.keys(moodColorMap).map((mood) => ({
                     value: mood,
                     type: "circle",
+                    color: moodColorMap[mood],
                   }))}
                 />
                 <Scatter
