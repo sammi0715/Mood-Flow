@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import logo from "../assets/images/logo-3.png";
 import { FaSearch } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { auth } from "../utills/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { RiNotification4Fill } from "react-icons/ri";
@@ -10,6 +10,7 @@ import { listenToFriendRequests, markRequestAsRead } from "../utills/firebase-da
 
 function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -151,8 +152,10 @@ function Header() {
     return friends.some((friend) => friend.id === userId);
   };
 
+  const shouldHideIcons = location.pathname === "/";
+
   return (
-    <header className="w-screen h-[90px] bg-amber-100 py-4 px-6 flex justify-between items-center">
+    <header className="w-screen sticky z-10 top-0 h-[60px] lg:h-[90px] bg-light-yellow py-4 px-6 flex justify-between items-center">
       <div className="flex items-center">
         <img
           src={logo}
@@ -162,12 +165,12 @@ function Header() {
         />
       </div>
       <div className="relative">
-        {user && (
+        {!shouldHideIcons && (
           <>
-            <button className="text-gray-600 mr-4" onClick={toggleSearch}>
+            <button className="text-dark-blue mr-4" onClick={toggleSearch}>
               <FaSearch className="h-6 w-6 lg:h-8 lg:w-8" />
             </button>
-            <button className="text-gray-600 relative" onClick={toggleNotifications}>
+            <button className="text-dark-blue relative" onClick={toggleNotifications}>
               <RiNotification4Fill className="h-6 w-6 lg:h-8 lg:w-8" />
               {/* 如果有未讀通知，顯示紅點 */}
               {friendRequests.some((request) => !request.isRead) && (
@@ -214,7 +217,7 @@ function Header() {
             />
             <button
               onClick={handleSearch}
-              className="w-full mt-2 p-2 bg-blue-500 text-white rounded"
+              className="w-full mt-2 p-2 bg-dark-blue text-white rounded"
             >
               搜尋
             </button>
