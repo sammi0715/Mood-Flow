@@ -19,6 +19,22 @@ import {
   isSameDay,
   addDays,
 } from "date-fns";
+import pencil from "../../assets/images/pencil.png";
+
+const monthsInChinese = {
+  January: "一月",
+  February: "二月",
+  March: "三月",
+  April: "四月",
+  May: "五月",
+  June: "六月",
+  July: "七月",
+  August: "八月",
+  September: "九月",
+  October: "十月",
+  November: "十一月",
+  December: "十二月",
+};
 
 function DiaryCalendar() {
   const { userId } = useParams();
@@ -67,6 +83,7 @@ function DiaryCalendar() {
       navigate(`/new-diary-entry?date=${formattedDate}`);
     }
   };
+
   const renderDays = () => {
     const startOfTheMonth = startOfMonth(currentDate);
     const endTheMonth = endOfMonth(currentDate);
@@ -83,19 +100,20 @@ function DiaryCalendar() {
         <div
           key={currentDay.getTime()}
           onClick={() => handleDateClick(new Date(currentDay))}
-          className={`relative border-2 border-gray-200 rounded-[5px] h-16 lg:h-28 cursor-pointer ${
-            !isSameMonth(currentDay, currentDate) ? "bg-gray-100" : ""
+          className={`relative w-full flex justify-center items-center rounded-lg lg:rounded-xl h-16 lg:h-28 cursor-pointer transition duration-300 hover:shadow-lg bg-opacity-90 ${
+            !isSameMonth(currentDay, currentDate) ? "bg-brown" : "bg-light-beige "
           }`}
         >
-          <div className="absolute top-1 left-1 text-xs lg:text-sm font-bold">
+          <div className="absolute top-2 left-2 lg:left-4 text-xs md:text-base xl:text-xl font-bold text-dark-brown">
             {format(currentDay, "d")}
           </div>
+
           {/* 如果這天有日記，顯示相應的情緒圖片 */}
           {diaryForDay && diaryForDay.mood && (
-            <div className="flex flex-col items-center mt-4">
+            <div className="flex flex-col items-center mt-2 sm:mt-0">
               <img
                 src={moodIcons[diaryForDay.mood]}
-                className="h-8 w-8 lg:h-20 lg:w-20 mb-1"
+                className="h-8 w-8  sm:w-10 sm:h-10 md:h-12 md:w-12 lg:h-20 lg:w-20 lg:m-1"
                 alt={diaryForDay.mood}
                 title={diaryForDay.mood}
               />
@@ -116,7 +134,6 @@ function DiaryCalendar() {
     setCurrentDate(addMonths(currentDate, 1));
   };
 
-  // 處理滾輪事件，根據滾動方向切換月份
   const handleWheel = (e) => {
     if (throttleTimeout.current === null) {
       if (e.deltaY > 0) {
@@ -124,39 +141,51 @@ function DiaryCalendar() {
       } else if (e.deltaY < 0) {
         prevMonth();
       }
-      // 設置節流時間
       throttleTimeout.current = setTimeout(() => {
         throttleTimeout.current = null;
       }, 300);
     }
-    console.log("Current Date:", currentDate);
   };
 
+  const formattedMonth = format(currentDate, "MMMM");
+  const year = format(currentDate, "yyyy");
+  const monthInChinese = monthsInChinese[formattedMonth];
+
   return (
-    <div className="flex h-full overflow-y-auto">
+    <div className="flex flex-col min-h-screen overflow-y-auto">
       {/* Sidebar */}
       <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
 
-      <div className="flex-1 p-4 h-screen">
+      <div className="flex-grow p-4 lg:p-16 bg-back">
         <div className="flex items-center justify-between mb-6">
           {/* 左側的 menu icon */}
           <div className="flex-none">
             <TiThMenu
-              className="h-6 w-6 lg:h-8 lg:w-8 cursor-pointer text-gray-600 hover:text-gray-800"
+              className="h-6 w-6 lg:h-8 lg:w-8 cursor-pointer text-dark-blue hover:text-gray-800"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             />
           </div>
 
           {/* 中間的年份和月份 */}
-          <div className="text-center flex items-center justify-centers">
-            <button onClick={prevMonth} className="lg:mr-8">
-              <FiChevronLeft className="h-6 w-6 text-gray-500 hover:text-gray-700" />
+          <div className="flex items-center justify-center space-x-4">
+            <button
+              onClick={prevMonth}
+              className="mr-4 text-dark-blue hover:text-dark-blue transition duration-300"
+            >
+              <FiChevronLeft className="h-6 w-6" />
             </button>
-            <div className="w-36 lg:w-48">
-              <h2 className="text-lg lg:text-2xl font-bold">{format(currentDate, "MMMM yyyy")}</h2>
+            <div className="w-36 lg:w-48 text-center ">
+              <h2 className="text-lg lg:text-2xl xl:text-3xl font-bold text-dark-blue">
+                {formattedMonth}
+                <br />
+                {monthInChinese} {year}
+              </h2>
             </div>
-            <button onClick={nextMonth} className="lg:ml-8">
-              <FiChevronRight className="h-6 w-6 text-gray-500 hover:text-gray-700" />
+            <button
+              onClick={nextMonth}
+              className="text-dark-blue hover:text-dark-blue transition duration-300"
+            >
+              <FiChevronRight className="h-6 w-6" />
             </button>
           </div>
 
@@ -164,32 +193,40 @@ function DiaryCalendar() {
           <div className="flex-none">
             {!spotifyToken ? (
               <button
-                className="flex bg-green-500 text-white px-2 py-1 items-center rounded-lg "
+                className="flex bg-gradient-to-tl from-[#33a9a0] to-[#c4e81d]  text-white text-sm lg:text-lg p-1 lg:px-4 lg:py-2 rounded-lg items-center"
                 onClick={handleSpotifyLogin}
               >
-                <p className="text-sm">連結</p>
-                <FaSpotify className="ml-2" />
+                連結 <FaSpotify className="ml-2 text-white w-4 h-4 xl:w-6 xl:h-6" />
               </button>
             ) : (
-              <button className=" flex bg-green-500 text-white px-2 py-2 rounded-lg items-center">
+              <button className="flex bg-gradient-to-r from-[#35ce75] to-[#e5f046] text-white px-2 py-2 rounded-lg items-center text-base lg:text-xl">
                 已連結
-                <FaSpotify className="ml-2" />
+                <FaSpotify className="ml-2 text-white xl:w-6 xl:h-6" />
               </button>
             )}
           </div>
         </div>
-
         <div className="grid grid-cols-7 gap-4 text-center">
           {["週日", "週一", "週二", "週三", "週四", "週五", "週六"].map((day) => (
-            <div key={day} className="text-sm lg:text-xl text-gray-600 font-semibold">
+            <div
+              key={day}
+              className={`text-sm lg:text-2xl font-semibold ${
+                day === "週六" || day === "週日" ? "text-red-400" : "text-dark-blue"
+              }`}
+            >
               {day}
             </div>
           ))}
         </div>
-
         {/* 日曆 */}
-        <div className="grid grid-cols-7  gap-2 lg:gap-4 text-center mt-2" onWheel={handleWheel}>
+        <div
+          className="grid grid-cols-7 gap-y-4 gap-x-2 md:gap-2 lg:gap-4 text-center mt-2"
+          onWheel={handleWheel}
+        >
           {renderDays()}
+        </div>{" "}
+        <div className="flex justify-center items-center mt-8">
+          <img src={pencil} className="w-3/4"></img>
         </div>
       </div>
     </div>
