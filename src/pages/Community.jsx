@@ -15,15 +15,20 @@ import {
 } from "../utills/firebase-data";
 import moodIcons from "../utills/moodIcons";
 import { FaRegHeart, FaHeart, FaRegComment } from "react-icons/fa";
-import { IoIosClose } from "react-icons/io";
+import { IoIosClose, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import { IoCloseCircle } from "react-icons/io5";
 import { auth } from "../utills/firebase";
+import { LiaUserFriendsSolid } from "react-icons/lia";
+import { RiUser5Fill } from "react-icons/ri";
+import Sidebar from "../pages/Sidebar";
+import { TiThMenu } from "react-icons/ti";
+
 function Community() {
   const [friends, setFriends] = useState([]);
+  const [isFriendsListOpen, setIsFriendsListOpen] = useState(true);
   const [friendRequests, setFriendRequests] = useState([]);
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [selectedFriendDiaries, setSelectedFriendDiaries] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
   const [loadingDiaries, setLoadingDiaries] = useState(false);
   const [error, setError] = useState(null);
   const [commentTexts, setCommentTexts] = useState("");
@@ -31,6 +36,7 @@ function Community() {
   const [likeStatuses, setLikeStatuses] = useState({});
   const [showCommentInput, setShowCommentInput] = useState({});
   const [userProfiles, setUserProfiles] = useState({});
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { userId } = useParams();
 
   useEffect(() => {
@@ -194,180 +200,217 @@ function Community() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex">
-      {/* 左側：好友列表 */}
-      <div className="w-28 lg:w-60 bg-gray-100 p-4">
-        <h2 className="text-base lg:text-xl font-bold mb-4">好友列表</h2>
-        <ul>
-          {friends.map((friend) => (
-            <li
-              key={friend.id}
-              className="cursor-pointer p-[4px] lg:p-2 hover:bg-gray-300 hover:rounded-md items-center flex justify-between"
-              onClick={() => handleSelectFriend(friend)}
-            >
-              {friend.name}
-              <button
-                className="ml-2 text-white rounded "
-                onClick={() => handleDeleteFriend(friend.id)}
-              >
-                <IoIosClose className="text-gray-500 w-4 h-4 lg:w-6 lg:h-6" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+  const toggleFriendsList = () => {
+    setIsFriendsListOpen(!isFriendsListOpen);
+  };
 
-      {/* 右側：好友日記動態、好友邀請、搜尋功能 */}
-      <div className="flex-1 p-4 overflow-auto">
-        {/* 好友邀請通知 */}
-        <div className="mb-6">
-          <h2 className="text-lg  lg:text-xl font-bold">好友邀請</h2>
+  return (
+    <div className="min-h-screen flex flex-row-reverse">
+      {/* 左側：好友列表 */}
+      <div
+        className={`fixed  right-0 h-screen bg-light-green transition-transform duration-300 ${
+          isFriendsListOpen ? "translate-x-full" : "translate-x-0"
+        } w-48 lg:w-60 p-4`}
+      >
+        <button
+          className="absolute top-4 right-100 flex items-center cursor-pointer text-xl"
+          onClick={toggleFriendsList}
+        >
+          <IoIosArrowForward className="text-black" />
+        </button>
+
+        <div className="p-2">
+          <h2 className="text-base lg:text-xl font-bold mb-4 mt-4 lg:mt-6 ml-4">好友列表</h2>
           <ul>
-            {friendRequests.length > 0 ? (
-              friendRequests.map((request) => (
-                <li key={request.id} className="mb-2">
-                  <span>
-                    {request.name} ({request.email}) - {request.status}
-                  </span>
-                  <button
-                    onClick={() => handleAcceptFriendRequest(request)}
-                    className="ml-4 p-2 bg-blue-500 text-white rounded"
-                  >
-                    接受
-                  </button>
-                  <button
-                    onClick={() => handleRejectFriendRequest(request.id)}
-                    className="ml-2 p-2 bg-red-500 text-white rounded"
-                  >
-                    X
-                  </button>
-                </li>
-              ))
-            ) : (
-              <p className="text-sm lg:text-base">暫無好友邀請～</p>
-            )}
+            {friends.map((friend) => (
+              <li
+                key={friend.id}
+                className="cursor-pointer min-w-[92px] p-1 hover:bg-light-yellow hover:rounded-md items-center flex justify-between text-base"
+                onClick={() => handleSelectFriend(friend)}
+              >
+                {friend.name}
+                <button
+                  className="ml-2 text-white rounded "
+                  onClick={() => handleDeleteFriend(friend.id)}
+                >
+                  <IoIosClose className="text-black w-4 h-4 lg:w-6 lg:h-6" />
+                </button>
+              </li>
+            ))}
           </ul>
         </div>
-
-        {/* 好友日記動態 */}
-        {selectedFriend ? (
-          <div>
-            <h2 className="text-lg lg:text-xl mb-4 ">{selectedFriend.name} 的日記動態</h2>
-            {loadingDiaries ? (
-              <p>正在載入日記...</p>
-            ) : error ? (
-              <p className="text-red-500">{error}</p>
-            ) : selectedFriendDiaries.length > 0 ? (
-              <ul>
-                {selectedFriendDiaries.map((diary) => (
-                  <li key={diary.id} className="mb-2 p-2 bg-gray-50 rounded">
-                    <div className="flex items-center mb-2">
-                      {selectedFriend.profile_pic ? (
-                        <img
-                          src={selectedFriend.profile_pic}
-                          alt={`${selectedFriend.name} profile pic`}
-                          className="w-8 h-8 rounded-full mr-2"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
-                      )}
-                      <p className="font-bold">{selectedFriend.name}</p>
-                    </div>
-
-                    <div className="flex items-center mt-2">
-                      <img src={moodIcons[diary.mood]} alt={diary.mood} className="w-6 h-6 mr-2" />
-                      <p>{diary.mood}</p>
-                    </div>
-                    <p className="text-sm lg:text-base">{diary.content}</p>
-
-                    <p className="text-xs lg:text-sm text-right text-gray-500"> {diary.date}</p>
-                    <div className="flex items-center space-x-4">
-                      {" "}
-                      <button
-                        onClick={() => handleToggleLike(diary.id)}
-                        className="text-red-600 rounded flex items-center"
-                      >
-                        {likeStatuses[diary.id]?.includes(auth.currentUser.uid) ? (
-                          <FaHeart />
-                        ) : (
-                          <FaRegHeart />
-                        )}
-                        <span className="ml-2">{likeStatuses[diary.id]?.length || 0}</span>{" "}
-                      </button>
-                      <button
-                        className="text-black flex items-center"
-                        onClick={() => handleToggleCommentInput(diary.id)}
-                      >
-                        <FaRegComment />
-                        <span className="ml-2">{diaryComments[diary.id]?.length || 0}</span>
-                      </button>
-                    </div>
-
-                    {/* Comments */}
-
-                    <ul className="mt-4">
-                      {diaryComments[diary.id]?.map((comment) => {
-                        if (!userProfiles[comment.userId]) {
-                          fetchUserProfile(comment.userId);
-                        }
-                        const userProfile = userProfiles[comment.userId] || {};
-                        return (
-                          <li key={comment.id} className="mb-2 p-2 bg-gray-100 rounded">
-                            <div className="flex items-center mb-1">
-                              {userProfile.profile_pic ? (
-                                <img
-                                  src={userProfile.profile_pic}
-                                  alt={`${userProfile.name} profile`}
-                                  className="w-6 h-6 rounded-full mr-2"
-                                />
-                              ) : (
-                                <div className="w-6 h-6 rounded-full bg-gray-300 mr-2"></div>
-                              )}
-                              <p className="text-sm lg:text-base font-bold mr-2">
-                                {userProfile.name || "Loading..."}
-                              </p>
-                              <p className="text-xs lg:text-sm text-gray-500">
-                                {comment.createdAt?.toDate().toLocaleString()}
-                              </p>
-                            </div>
-                            <p className="text-sm lg:text-base">{comment.content}</p>
-                          </li>
-                        );
-                      })}
-                    </ul>
-
-                    {/* Add Comment */}
-                    {showCommentInput[diary.id] && (
-                      <div className="mt-2">
-                        <input
-                          type="text"
-                          placeholder="輸入留言..."
-                          value={commentTexts[diary.id] || ""}
-                          onChange={(e) => handleCommentTextChange(diary.id, e.target.value)}
-                          className="border p-2 w-full"
-                        />
-                        <button
-                          onClick={() => handleAddComment(diary.id)}
-                          className="mt-2 p-1 bg-amber-500 text-white rounded text-xs"
-                        >
-                          送出
-                        </button>
-                      </div>
-                    )}
+      </div>
+      {/* 右側：好友日記動態、好友邀請、搜尋功能 */}
+      <div className="flex-1 overflow-auto">
+        {/* 好友邀請通知 */}
+        <div className="mb-6">
+          <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+          <div className="p-8">
+            <div className="flex items-center space-x-3 justify-between">
+              <TiThMenu
+                className="w-6 h-6 lg:h-8 lg:w-8 mr-4 cursor-pointer text-gray-600 hover:text-gray-800"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              />
+              <h2 className="text-lg lg:text-2xl font-bold ml-4 text-left flex-1">好友邀請</h2>
+              <button className="text-2xl flex items-center" onClick={toggleFriendsList}>
+                <IoIosArrowBack className="text-dark-green" />
+                <RiUser5Fill className=" w-8 h-8 text-dark-green text-center items-center" />
+              </button>
+            </div>
+            <ul className="">
+              {friendRequests.length > 0 ? (
+                friendRequests.map((request) => (
+                  <li key={request.id} className="mb-2 mt-6 items-center flex text-base">
+                    <span>
+                      {request.name} ({request.email})
+                    </span>
+                    <button
+                      onClick={() => handleAcceptFriendRequest(request)}
+                      className="ml-2 md:ml-4 p-1 text-xs lg:text-base bg-dark-orange text-white rounded"
+                    >
+                      接受
+                    </button>
+                    <button
+                      onClick={() => handleRejectFriendRequest(request.id)}
+                      className=" text-white rounded items-center"
+                    >
+                      <IoCloseCircle className="w-7 h-7 text-pink-orange ml-4" />
+                    </button>
                   </li>
-                ))}
-              </ul>
-            ) : (
-              <p>這位好友還沒有日記～</p>
-            )}
-          </div>
-        ) : (
-          <p>請選擇一位好友以查看他們的日記動態！</p>
-        )}
+                ))
+              ) : (
+                <p className="text-sm lg:text-base mt-6">暫無好友邀請～</p>
+              )}
+            </ul>
 
-        {/* 錯誤訊息顯示 */}
-        {error && <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">{error}</div>}
+            {/* 好友日記動態 */}
+            {selectedFriend ? (
+              <div>
+                <h2 className="text-lg lg:text-xl mb-4 mt-10">{selectedFriend.name} 的日記動態</h2>
+                {loadingDiaries ? (
+                  <p>正在載入日記...</p>
+                ) : error ? (
+                  <p className="text-red-500">{error}</p>
+                ) : selectedFriendDiaries.length > 0 ? (
+                  <ul>
+                    {selectedFriendDiaries.map((diary) => (
+                      <li key={diary.id} className="mb-2 p-4 bg-light-beige rounded">
+                        <div className="flex items-center mb-2">
+                          {selectedFriend.profile_pic ? (
+                            <img
+                              src={selectedFriend.profile_pic}
+                              alt={`${selectedFriend.name} profile pic`}
+                              className="w-12 h-12 rounded-full mr-2"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-light-beige mr-2"></div>
+                          )}
+                          <p className="font-bold">{selectedFriend.name}</p>
+                        </div>
+
+                        <div className="flex items-center mt-2">
+                          <img
+                            src={moodIcons[diary.mood]}
+                            alt={diary.mood}
+                            className="w-6 h-6 mr-2"
+                          />
+                          <p>{diary.mood}</p>
+                        </div>
+                        <p className="text-sm lg:text-base">{diary.content}</p>
+
+                        <p className="text-xs lg:text-sm text-right text-gray-500"> {diary.date}</p>
+                        <div className="flex items-center space-x-4">
+                          {" "}
+                          <button
+                            onClick={() => handleToggleLike(diary.id)}
+                            className="text-red-600 rounded flex items-center"
+                          >
+                            {likeStatuses[diary.id]?.includes(auth.currentUser.uid) ? (
+                              <FaHeart />
+                            ) : (
+                              <FaRegHeart />
+                            )}
+                            <span className="ml-2">{likeStatuses[diary.id]?.length || 0}</span>{" "}
+                          </button>
+                          <button
+                            className="text-black flex items-center"
+                            onClick={() => handleToggleCommentInput(diary.id)}
+                          >
+                            <FaRegComment />
+                            <span className="ml-2">{diaryComments[diary.id]?.length || 0}</span>
+                          </button>
+                        </div>
+
+                        {/* Comments */}
+
+                        <ul className="mt-4">
+                          {diaryComments[diary.id]?.map((comment) => {
+                            if (!userProfiles[comment.userId]) {
+                              fetchUserProfile(comment.userId);
+                            }
+                            const userProfile = userProfiles[comment.userId] || {};
+                            return (
+                              <li key={comment.id} className="mb-2 p-2 bg-antique-white rounded">
+                                <div className="flex items-center mb-1">
+                                  {userProfile.profile_pic ? (
+                                    <img
+                                      src={userProfile.profile_pic}
+                                      alt={`${userProfile.name} profile`}
+                                      className="w-6 h-6 rounded-full mr-2"
+                                    />
+                                  ) : (
+                                    <div className="w-6 h-6 rounded-full bg-light-beige mr-2"></div> //使用者頭貼預設
+                                  )}
+                                  <p className="text-sm lg:text-base font-bold mr-2">
+                                    {userProfile.name || "Loading..."}
+                                  </p>
+                                  <p className="text-xs lg:text-sm text-gray-500">
+                                    {comment.createdAt?.toDate().toLocaleString()}
+                                  </p>
+                                </div>
+                                <p className="text-sm lg:text-base">{comment.content}</p>
+                              </li>
+                            );
+                          })}
+                        </ul>
+
+                        {/* Add Comment */}
+                        {showCommentInput[diary.id] && (
+                          <div className="mt-2">
+                            <input
+                              type="text"
+                              placeholder="輸入留言..."
+                              value={commentTexts[diary.id] || ""}
+                              onChange={(e) => handleCommentTextChange(diary.id, e.target.value)}
+                              className="border p-2 w-full"
+                            />
+                            <button
+                              onClick={() => handleAddComment(diary.id)}
+                              className="mt-2 p-1 bg-amber-500 text-white rounded text-xs"
+                            >
+                              送出
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>這位好友還沒有日記～</p>
+                )}
+              </div>
+            ) : (
+              <p
+                className="mt-4
+              "
+              >
+                請選擇一位好友以查看他們的日記動態！
+              </p>
+            )}
+            {/* 錯誤訊息顯示 */}
+            {error && <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">{error}</div>}
+          </div>
+        </div>{" "}
       </div>
     </div>
   );
