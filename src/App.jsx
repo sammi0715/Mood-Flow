@@ -16,25 +16,19 @@ function App() {
   return (
     <Router>
       <SpotifyPlayerProvider>
-        <div className="flex flex-col min-h-screen">
-          <Header />
-
-          <main className="flex-1 overflow-auto">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/diary-calendar/:userId" element={<DiaryCalendar />} />
-              <Route path="/spotify-callback" element={<SpotifyCallback />} />
-              <Route path="/view-diary/:diaryId" element={<ViewDiaryEntry />} />
-              <Route path="/new-diary-entry" element={<NewDiaryEntry />} />
-              <Route path="/community/:userId" element={<Community />} />
-              <Route path="/history-review/:userId" element={<HistoryReview />} />
-              <Route path="/mood-track/:userId" element={<MoodTrack />} />
-              <Route path="/settings/:userId" element={<Settings />} />
-            </Routes>
-          </main>
-
-          <Footer />
-        </div>
+        <Header />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/diary-calendar/:userId" element={<DiaryCalendar />} />
+          <Route path="/spotify-callback" element={<SpotifyCallback />} />
+          <Route path="/view-diary/:diaryId" element={<ViewDiaryEntry />} />
+          <Route path="/new-diary-entry" element={<NewDiaryEntry />} />
+          <Route path="/community/:userId" element={<Community />} />
+          <Route path="/history-review/:userId" element={<HistoryReview />} />
+          <Route path="/mood-track/:userId" element={<MoodTrack />} />
+          <Route path="/settings/:userId" element={<Settings />} />
+        </Routes>
+        <Footer />
       </SpotifyPlayerProvider>
     </Router>
   );
