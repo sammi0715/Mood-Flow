@@ -5,7 +5,7 @@ import {
   handleImageUpload as firebaseHandleImageUpload,
 } from "../utills/firebase-data";
 import { useParams } from "react-router-dom";
-
+import { FaCircleUser } from "react-icons/fa6";
 const ProfileSettings = () => {
   const { userId } = useParams();
 
@@ -75,7 +75,28 @@ const ProfileSettings = () => {
   return (
     <div className="min-h-screen p-8">
       <h2 className="text-2xl mb-4">個人資料設定</h2>
-
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">頭像</label>
+        {uploadedImages.length > 0 ? (
+          <img
+            src={uploadedImages[0]}
+            alt="Profile Preview"
+            className="h-28 w-28  mt-2 rounded-full"
+          />
+        ) : userData.profile_pic ? (
+          <img src={userData.profile_pic} alt="Profile" className="h-28 w-28 mt-2 rounded-full" />
+        ) : (
+          <div className="h-20 w-20 mt-2 bg-gray-200 flex items-center justify-center text-gray-500 rounded-full">
+            <FaCircleUser className="h-20 w-20" />
+          </div>
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="py-2 px-3 mt-4"
+        />
+      </div>
       <div className="mb-4">
         <label className="block text-gray-700 text-sm font-bold mb-2">使用者名稱</label>
         <input
@@ -84,20 +105,6 @@ const ProfileSettings = () => {
           onChange={(e) => setNewName(e.target.value)}
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">頭像</label>
-        <input type="file" accept="image/*" onChange={handleImageUpload} className="py-2 px-3" />
-        {uploadedImages.length > 0 ? (
-          <img src={uploadedImages[0]} alt="Profile Preview" className="h-20 w-20 mt-2" />
-        ) : userData.profile_pic ? (
-          <img src={userData.profile_pic} alt="Profile" className="h-20 w-20 mt-2" />
-        ) : (
-          <div className="h-20 w-20 mt-2 bg-gray-200 flex items-center justify-center text-gray-500">
-            無頭像
-          </div>
-        )}
       </div>
 
       <div className="mb-4">
@@ -119,7 +126,7 @@ const ProfileSettings = () => {
 
       <button
         onClick={handleUpdateProfile}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        className="bg-dark-orange hover:bg-blue-400 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
       >
         更新資料
       </button>
