@@ -112,7 +112,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
     localStorage.removeItem("spotify_device_id");
 
     const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-    const redirectUri = "http://localhost:5173/spotify-callback";
+    const redirectUri = "https://mood-flow.web.app/spotify-callback";
 
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
@@ -150,7 +150,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
     }
 
     const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-    const redirectUri = "http://localhost:5173/spotify-callback";
+    const redirectUri = "https://mood-flow.web.app/spotify-callback";
 
     const params = new URLSearchParams({
       client_id: clientId,
