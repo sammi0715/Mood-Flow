@@ -173,9 +173,9 @@ function NewDiaryEntry() {
                   />
                   <button
                     onClick={() => handleRemoveImage(index, setUploadedImages)}
-                    className="absolute top-2 right-2 bg-amber-400 text-white rounded-full"
+                    className="absolute top-2 right-2 bg-white rounded-full"
                   >
-                    <IoMdCloseCircle className="text-white hover:text-amber-900 w-5 h-5 " />
+                    <IoMdCloseCircle className="text-light-pink hover:text-red-600 w-5 h-5 " />
                   </button>
                 </div>
               ))}
@@ -183,7 +183,7 @@ function NewDiaryEntry() {
           )}
         </div>
 
-        <h3 className="text-lg font-semibold mb-4">Music</h3>
+        <h3 className="text-lg font-semibold mb-2">Music</h3>
 
         {spotifyToken ? (
           <SpotifyTracks onSelectTrack={handleTrackSelect} />
