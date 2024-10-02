@@ -123,7 +123,10 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="p-2 border border-gray-300 rounded-lg w-full"
         />
-        <button onClick={handleSearch} className="bg-blue-500 text-white px-4 py-2 rounded-lg mt-2">
+        <button
+          onClick={handleSearch}
+          className="bg-light-orange text-white px-4 py-2 rounded-lg mt-2"
+        >
           搜尋
         </button>
       </div>
