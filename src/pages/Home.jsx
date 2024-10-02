@@ -105,9 +105,12 @@ function Home() {
   };
 
   return (
-    <div className="relative w-full h-screen lg:bg-mood-flow-banner xl:bg-mood-flow-banner bg-mobile-mood-flow-banner bg-cover bg-center">
-      <div className="absolute bottom-40 lg:bottom-32 w-full flex flex-col justify-center items-center">
-        <button onClick={handleLoginClick} className="w-32 h-12 xl:w-48 xl:h-16 bg-orange-200">
+    <div className="relative w-full h-screen lg:bg-mood-flow-banner xl:bg-mood-flow-banner bg-mobile-mood-flow-banner bg-cover bg-center bg-no-repeat xl:bg-120-100 lg:bg-130-100 md:bg-100-130">
+      <div className="absolute bottom-48 md:bottom-72 lg:bottom-56 w-full flex flex-col justify-center items-center">
+        <button
+          onClick={handleLoginClick}
+          className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-orange-200"
+        >
           登入
         </button>
         <div className="flex flex-col items-center justify-center mt-4">
@@ -119,7 +122,7 @@ function Home() {
         </div>
         <button
           onClick={handleSignUpClick}
-          className="w-32 h-12 xl:w-48 xl:h-16 bg-amber-200 mt-4 xl:mt-9"
+          className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-amber-200 mt-4 xl:mt-9"
         >
           註冊
         </button>
@@ -209,7 +212,7 @@ function Home() {
                 />
               ) : (
                 <FaCircleUser
-                  className="h-16 w-16 cursor-pointer"
+                  className="h-16 w-16 cursor-pointer text-gray-400"
                   onClick={handleImageUploadClick}
                 />
               )}
