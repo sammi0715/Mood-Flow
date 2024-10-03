@@ -170,7 +170,7 @@ function ViewDiaryEntry() {
           </div>
 
           <div className="flex-grow text-center">
-            <h2 className="text-2xl font-bold ">Diary Entry</h2>
+            <h2 className="text-2xl ">Diary Entry</h2>
           </div>
           <div className="flex-none">
             {isEditing && (
@@ -185,7 +185,7 @@ function ViewDiaryEntry() {
 
           <div className="flex-none" style={{ width: "2rem" }}></div>
         </div>{" "}
-        <h3 className="text-xl text-center font-semibold mb-4">{diary.date}</h3>
+        <h3 className="text-xl text-center mb-4">{diary.date}</h3>
         {isEditing ? (
           <div className="flex-grow max-w-4xl mx-auto">
             <div className="mb-6">
@@ -255,7 +255,7 @@ function ViewDiaryEntry() {
                   multiple
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
-                  <div className="h-10 w-10 text-lg font-bold bg-gray-200 rounded-full flex justify-center items-center">
+                  <div className="h-10 w-10 text-lg bg-gray-200 rounded-full flex justify-center items-center">
                     +
                   </div>
                 </label>
@@ -295,7 +295,7 @@ function ViewDiaryEntry() {
                     className="w-24 h-24 rounded-full"
                   />
                   <div>
-                    <p className="text-xl font-semibold">{updatedTrack.name}</p>
+                    <p className="text-xl">{updatedTrack.name}</p>
                     {updatedTrack.artists.join(", ")}
                   </div>
                 </div>
@@ -330,7 +330,7 @@ function ViewDiaryEntry() {
             )}
             {diary.track && (
               <div className="mt-10">
-                <h4 className="text-lg font-semibold mb-4">Music</h4>
+                <h4 className="text-lg mb-4">Music</h4>
                 <div className="flex h-28 p-2 items-center space-x-4  mb-10  bg-gray-100 rounded-lg shadow-md">
                   <img
                     src={diary.track.albumImageUrl}
@@ -338,7 +338,7 @@ function ViewDiaryEntry() {
                     className="w-20 h-20 md:w-24 md:h-24 rounded-full"
                   />
                   <div className="flex-1">
-                    <p className="text-base md:text-xl font-semibold">{diary.track.name}</p>
+                    <p className="text-base md:text-xl">{diary.track.name}</p>
                     <p className="text-sm text-gray-400">{diary.track.artists.join(", ")} </p>
                   </div>
 

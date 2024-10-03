@@ -211,7 +211,7 @@ const MoodTrack = () => {
               <p>沒有可用的心情數據</p>
             )}
           </div>
-          <p className="mt-4 text-lg font-semibold text-center">Keep good mood!</p>
+          <p className="mt-4 text-xl text-center">Keep good mood!</p>
         </div>
 
         {/* 心情趨勢圖 */}

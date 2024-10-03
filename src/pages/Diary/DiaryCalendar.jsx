@@ -104,7 +104,7 @@ function DiaryCalendar() {
             !isSameMonth(currentDay, currentDate) ? "bg-brown" : "bg-light-beige "
           }`}
         >
-          <div className="absolute top-2 left-2 lg:left-4 text-xs md:text-base xl:text-xl font-bold text-dark-brown">
+          <div className="absolute top-2 left-2 lg:left-4 text-xs md:text-base xl:text-xl text-dark-brown">
             {format(currentDay, "d")}
           </div>
 
@@ -175,7 +175,7 @@ function DiaryCalendar() {
               <FiChevronLeft className="h-6 w-6" />
             </button>
             <div className="w-36 lg:w-48 text-center ">
-              <h2 className="text-lg lg:text-2xl xl:text-3xl font-bold text-dark-blue">
+              <h2 className="text-lg lg:text-2xl xl:text-3xl text-dark-blue">
                 {formattedMonth}
                 <br />
                 {monthInChinese} {year}
@@ -210,7 +210,7 @@ function DiaryCalendar() {
           {["週日", "週一", "週二", "週三", "週四", "週五", "週六"].map((day) => (
             <div
               key={day}
-              className={`text-sm lg:text-2xl font-semibold ${
+              className={`text-sm lg:text-2xl ${
                 day === "週六" || day === "週日" ? "text-red-400" : "text-dark-blue"
               }`}
             >

@@ -151,7 +151,7 @@ function HistoryReview() {
             className="w-6 h-6 lg:h-8 lg:w-8 mr-4 cursor-pointer text-gray-600 hover:text-gray-800"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           />
-          <h1 className="text-2xl sm:text-3xl font-bold">歷史回顧</h1>
+          <h1 className="text-2xl sm:text-3xl">歷史回顧</h1>
         </div>
         {/* 日期與區間篩選器 */}
         <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -190,7 +190,7 @@ function HistoryReview() {
           </div>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6">
+        <h1 className="text-2xl sm:text-3xl mb-6">
           {isFiltered ? "回顧內容" : `上個月的今天:  ${formattedMonth}/${format(today, "dd")}`}
         </h1>
 
@@ -214,14 +214,14 @@ function HistoryReview() {
                   </div>
                   {/* 日期與日記內容 */}
                   <div className="flex flex-col">
-                    <h3 className="text-lg sm:text-xl font-bold mb-2">
+                    <h3 className="text-lg sm:text-xl mb-2">
                       {diary.date ? format(new Date(diary.date), "yyyy-MM-dd") : "無有效日期"}
                     </h3>
                     <p className="mb-4 text-base lg:text-xl">{diary.content}</p>
                     {/* 音樂區域 */}
                     {diary.track && (
                       <div className="mt-2">
-                        <h4 className="text-lg font-bold mb-2">音樂：</h4>
+                        <h4 className="text-lg mb-2">音樂：</h4>
                         <div className="p-4 xl:w-[480px] sm:w-[300px] flex items-center space-x-4 bg-gray-100 rounded-lg shadow-md sm:mb-2">
                           <img
                             src={diary.track.albumImageUrl}

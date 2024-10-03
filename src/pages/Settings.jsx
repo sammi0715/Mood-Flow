@@ -76,7 +76,7 @@ const ProfileSettings = () => {
     <div className="min-h-screen p-8">
       <h2 className="text-2xl mb-4">個人資料設定</h2>
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">頭像</label>
+        <label className="block text-gray-700 text-sm mb-2">頭像</label>
         {uploadedImages.length > 0 ? (
           <img
             src={uploadedImages[0]}
@@ -98,7 +98,7 @@ const ProfileSettings = () => {
         />
       </div>
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">使用者名稱</label>
+        <label className="block text-gray-700 text-sm mb-2">使用者名稱</label>
         <input
           type="text"
           value={newName}
@@ -108,7 +108,7 @@ const ProfileSettings = () => {
       </div>
 
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">隱私狀態</label>
+        <label className="block text-gray-700 text-sm mb-2">隱私狀態</label>
         <select
           value={privacyStatus}
           onChange={(e) => setPrivacyStatus(e.target.value)}
@@ -126,7 +126,7 @@ const ProfileSettings = () => {
 
       <button
         onClick={handleUpdateProfile}
-        className="bg-dark-orange hover:bg-blue-400 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        className="bg-dark-orange hover:bg-blue-400 text-white py-2 px-4 rounded focus:outline-none focus:shadow-outline"
       >
         更新資料
       </button>

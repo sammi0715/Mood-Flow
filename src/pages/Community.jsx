@@ -220,7 +220,7 @@ function Community() {
         </button>
 
         <div className="p-2">
-          <h2 className="text-base lg:text-xl font-bold mb-4 mt-4 lg:mt-6 ml-4">好友列表</h2>
+          <h2 className="text-base lg:text-xl mb-4 mt-4 lg:mt-6 ml-4">好友列表</h2>
           <ul>
             {friends.map((friend) => (
               <li
@@ -251,7 +251,7 @@ function Community() {
                 className="w-6 h-6 lg:h-8 lg:w-8 mr-4 cursor-pointer text-gray-600 hover:text-gray-800"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               />
-              <h2 className="text-lg lg:text-2xl font-bold ml-4 text-left flex-1">好友邀請</h2>
+              <h2 className="text-lg lg:text-2xl ml-4 text-left flex-1">好友邀請</h2>
               <button className="text-2xl flex items-center" onClick={toggleFriendsList}>
                 <IoIosArrowBack className="text-dark-green" />
                 <RiUser5Fill className=" w-8 h-8 text-dark-green text-center items-center" />
@@ -305,7 +305,7 @@ function Community() {
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-light-beige mr-2"></div>
                           )}
-                          <p className="font-bold">{selectedFriend.name}</p>
+                          <p>{selectedFriend.name}</p>
                         </div>
 
                         <div className="flex items-center mt-2">
@@ -361,7 +361,7 @@ function Community() {
                                   ) : (
                                     <div className="w-6 h-6 rounded-full bg-light-beige mr-2"></div> //使用者頭貼預設
                                   )}
-                                  <p className="text-sm lg:text-base font-bold mr-2">
+                                  <p className="text-sm lg:text-base  mr-2">
                                     {userProfile.name || "Loading..."}
                                   </p>
                                   <p className="text-xs lg:text-sm text-gray-500">

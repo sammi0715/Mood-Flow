@@ -132,7 +132,7 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
       </div>
       {/* Search Results Section */}
       <div>
-        <h2 className="text-2xl font-semibold mb-4">搜尋結果：</h2>
+        <h2 className="text-2xl mb-4">搜尋結果：</h2>
         <div className="space-y-4">
           {searchResults.map((track) => (
             <div
@@ -145,7 +145,7 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
                 className="w-12 h-12 lg:w-24 lg:h-24 rounded-full"
               />
               <div className="flex-1">
-                <p className="text-sm lg:text-xl font-semibold">{track.name}</p>
+                <p className="text-sm lg:text-xl">{track.name}</p>
                 <p className="text-sm text-gray-400">{track.artists[0].name}</p>
               </div>
               <button onClick={() => handlePlayPause(track)}>
@@ -171,7 +171,7 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
       </div>
       {/* Top Tracks Section */}
       <div className="">
-        <h2 className="text-2xl font-semibold mb-4">Top Tracks</h2>
+        <h2 className="text-2xl mb-4">Top Tracks</h2>
         <div className="space-y-4">
           {tracks.map((track) => (
             <div
@@ -184,7 +184,7 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
                 className="w-12 h-12 lg:w-24 lg:h-24 rounded-full"
               />
               <div className="flex-1">
-                <p className="text-sm lg:text-xl font-semibold">{track.name}</p>
+                <p className="text-sm lg:text-xl">{track.name}</p>
                 <p className="text-xs text-gray-400">{track.artists[0].name}</p>
               </div>
               <button onClick={() => handlePlayPause(track)}>

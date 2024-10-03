@@ -181,7 +181,7 @@ function Header() {
             {/* 通知下拉菜單 */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-72 z-40 bg-white shadow-lg p-4 rounded-lg notification-box">
-                <h4 className="text-lg font-bold mb-2">通知</h4>
+                <h4 className="text-lg mb-2">通知</h4>
                 <p className="text-sm mb-2 text-gray-600">點擊通知將其標記為已讀</p>
                 {friendRequests.length > 0 ? (
                   <ul>

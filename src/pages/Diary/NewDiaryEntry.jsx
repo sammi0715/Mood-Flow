@@ -111,10 +111,10 @@ function NewDiaryEntry() {
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         />
       </div>
-      <h1 className="text-3xl font-bold text-center mt-4 mb-4">Today's Mood</h1>
+      <h1 className="text-3xl text-center mt-4 mb-4">Today's Mood</h1>
 
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-center mb-6">
+        <h2 className="text-xl text-center mb-6">
           {selectedDate ? selectedDate : "No date selected"}
         </h2>
 
@@ -155,7 +155,7 @@ function NewDiaryEntry() {
               multiple
             />
             <label htmlFor="file-upload" className="cursor-pointer">
-              <div className="h-10 w-10 text-lg font-bold bg-gray-200 rounded-full flex justify-center items-center">
+              <div className="h-10 w-10 text-lg bg-gray-200 rounded-full flex justify-center items-center">
                 +
               </div>
             </label>
@@ -183,7 +183,7 @@ function NewDiaryEntry() {
           )}
         </div>
 
-        <h3 className="text-lg font-semibold mb-2">Music</h3>
+        <h3 className="text-lg mb-2">Music</h3>
 
         {spotifyToken ? (
           <SpotifyTracks onSelectTrack={handleTrackSelect} />

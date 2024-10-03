@@ -77,7 +77,7 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
             <FaCircleUser className="w-8 h-8 lg:w-12 lg:h-12 text-gray-800 rounded-full mr-2 lg:mr-4" />
           )}
           <div>
-            <h1 className="font-bold  text-sm xl:text-xl">{userName || "Username"}</h1>
+            <h1 className="text-sm xl:text-xl">{userName || "Username"}</h1>
           </div>
         </div>
 
