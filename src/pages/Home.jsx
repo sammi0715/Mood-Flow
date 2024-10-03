@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { IoClose } from "react-icons/io5";
-import { FaCircleUser } from "react-icons/fa6";
+import { FaCircleUser, FaCirclePlus } from "react-icons/fa6";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { signUpUser, loginUser, signInWithGoogle, handleSetUsername } from "../utills/auth";
@@ -113,19 +113,23 @@ function Home() {
         >
           登入
         </button>
-        <div className="flex flex-col items-center justify-center mt-4">
-          <p className="text-sm text-center text-gray-700">或使用以下</p>
-          <FcGoogle
-            className="h-6 w-6  xl:h-8 xl:w-8 mt-2 cursor-pointer"
-            onClick={handleGoogleSignIn}
-          />
-        </div>
+
         <button
           onClick={handleSignUpClick}
           className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-amber-200 mt-4 xl:mt-9"
         >
           註冊
         </button>
+        <div className="flex flex-col items-center justify-center mt-4">
+          <p className="text-sm text-center text-gray-700 relative before:block before:absolute before:left-[-50px] before:top-[50%] before:w-[40px] before:border-t before:border-gray-300 after:block after:absolute after:right-[-50px] after:top-[50%] after:w-[40px] after:border-t after:border-gray-300">
+            或使用以下進行
+          </p>
+
+          <FcGoogle
+            className="h-6 w-6  xl:h-8 xl:w-8 mt-2 cursor-pointer"
+            onClick={handleGoogleSignIn}
+          />
+        </div>
       </div>
       {/* 登入視窗 */}
       {showLogin && (
@@ -207,15 +211,16 @@ function Home() {
                 <img
                   src={selectedImageURL}
                   alt="頭像預覽"
-                  className="h-16 w-16 rounded-full object-cover cursor-pointer"
+                  className="h-20 w-20 rounded-full object-cover cursor-pointer"
                   onClick={handleImageUploadClick}
                 />
               ) : (
                 <FaCircleUser
-                  className="h-16 w-16 cursor-pointer text-gray-400"
+                  className="h-20 w-20 cursor-pointer text-gray-400"
                   onClick={handleImageUploadClick}
                 />
               )}
+              <FaCirclePlus className="w-6 h-6 border border-2 border-white text-gray-400 bg-white rounded-full top-[15px] left-[-10px] relative" />
             </div>
             <input
               id="fileInput"
