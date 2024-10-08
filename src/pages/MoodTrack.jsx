@@ -24,10 +24,10 @@ const moodColorMap = {
   生氣: "#df0836",
   憂鬱: "#bbd5f3",
   焦慮: "#f87171",
-  平靜: "#bfebbe",
+  平靜: "#b5dcb4",
   快樂: "#f0b26f",
   興奮: "#efaea5",
-  開心: "#f4e098",
+  開心: "#f5de8b",
 };
 
 const moodCategories = {
@@ -233,11 +233,13 @@ const MoodTrack = () => {
                   width={85}
                   dataKey="moodLevel"
                   name="Mood"
-                  ticks={[1, 2, 3]}
+                  ticks={[1, 1.5, 2, 2.5, 3]}
                   tickFormatter={(value) => {
                     const moodLabels = {
                       1: "非常不愉快",
+                      1.5: "不愉快",
                       2: "情緒中性",
+                      2.5: "愉快",
                       3: "非常愉快",
                     };
                     return moodLabels[value] || "";
@@ -266,6 +268,34 @@ const MoodTrack = () => {
           ) : (
             <p>沒有可用的趨勢數據</p>
           )}
+        </div>
+        {/* 圖表說明進度條 */}
+        <div className="mt-8 p-6 border border-gray-300 rounded-lg">
+          <h2 className="text-xl lg:text-2xl mb-4">圖表說明</h2>
+          <div className="w-full flex flex-wrap items-center">
+            {Object.entries(moodCategories).map(([category, moods]) => (
+              <div
+                key={category}
+                className="flex items-center w-full mb-2 md:flex-1 md:flex-col md:justify-center md:items-center md:h-8 md:mr-1 md:min-w-[120px]"
+              >
+                <div
+                  className="h-8 w-24 md:w-full flex justify-center items-center mr-4"
+                  style={{
+                    backgroundColor:
+                      category === "愉快"
+                        ? "#f5e043"
+                        : category === "情緒中性"
+                        ? "#a3dda2"
+                        : moodColorMap[moods[0]],
+                  }}
+                >
+                  <span className="text-white text-xs lg:text-base">{category}</span>
+                </div>
+
+                <div className="text-xs lg:text-base md:mt-2">{moods.join("、")}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
