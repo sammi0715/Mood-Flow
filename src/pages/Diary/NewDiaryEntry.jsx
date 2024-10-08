@@ -13,6 +13,7 @@ import { useState } from "react";
 import { auth, db } from "../../utills/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { IoMdCloseCircle } from "react-icons/io";
+import { FaSpotify } from "react-icons/fa";
 import {
   simplifyTrack,
   handleImageUpload,
@@ -22,6 +23,7 @@ import {
 import { SpotifyTracks } from "../../utills/spotifyTrack";
 import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
 import Sidebar from "../Sidebar";
+import Alert from "../../utills/alert";
 
 function NewDiaryEntry() {
   const navigate = useNavigate();
@@ -35,6 +37,8 @@ function NewDiaryEntry() {
   const [loading, setLoading] = useState(false);
   const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertConfirm, setAlertConfirm] = useState(null);
   const handleTrackSelect = (track) => {
     if (track === null) {
       setSelectedTrack(null);
@@ -61,7 +65,7 @@ function NewDiaryEntry() {
 
   const handleSubmit = async () => {
     if (!selectedMood || !diaryContent.trim()) {
-      alert("請選擇一個心情並輸入日記內容。");
+      setAlertMessage("請選擇一個心情並輸入日記內容。");
       return;
     }
 
@@ -69,7 +73,7 @@ function NewDiaryEntry() {
     const user = auth.currentUser;
 
     if (!user) {
-      alert("使用者尚未登入");
+      setAlertMessage("使用者尚未登入");
       setLoading(false);
       return;
     }
@@ -88,16 +92,28 @@ function NewDiaryEntry() {
       };
 
       await addDoc(collection(db, "diaries"), diaryEntry);
-      alert("日記已成功保存！");
+
       setSelectedMood(null);
       setDiaryContent("");
       setUploadedImages([]);
-      navigate(`/diary-calendar/${user.uid}`);
+
+      setAlertMessage("日記已成功保存！");
+
+      setTimeout(() => {
+        navigate(`/diary-calendar/${user.uid}`);
+      }, 1500);
     } catch (error) {
       console.error("保存日記時出錯: ", error);
-      alert("保存日記時出錯，請稍後再試。");
+      setAlertMessage("保存日記時出錯，請稍後再試。");
     } finally {
       setLoading(false);
+    }
+  };
+  const handleImageUploadWrapper = async (event) => {
+    try {
+      await handleImageUpload(event, uploadedImages, setUploadedImages);
+    } catch (error) {
+      setAlertMessage(error.message);
     }
   };
 
@@ -118,7 +134,7 @@ function NewDiaryEntry() {
           {selectedDate ? selectedDate : "No date selected"}
         </h2>
 
-        <div className="flex flex-wrap justify-around items-center mb-6">
+        <div className="flex flex-wrap justify-around items-center mb-12 h-32">
           {moods.map((mood) => (
             <div
               key={mood.label}
@@ -151,7 +167,7 @@ function NewDiaryEntry() {
               id="file-upload"
               className="hidden"
               accept="image/jpg,image/jpeg,image/png,image/gif"
-              onChange={(e) => handleImageUpload(e, uploadedImages, setUploadedImages)}
+              onChange={handleImageUploadWrapper}
               multiple
             />
             <label htmlFor="file-upload" className="cursor-pointer">
@@ -189,10 +205,10 @@ function NewDiaryEntry() {
           <SpotifyTracks onSelectTrack={handleTrackSelect} />
         ) : (
           <button
-            className="bg-green-500 text-white px-4 py-2 rounded-lg"
+            className="flex bg-gradient-to-tl from-[#33a9a0] to-[#c4e81d]  text-white text-sm lg:text-lg p-1 lg:px-4 lg:py-2 rounded-lg items-center"
             onClick={handleSpotifyLogin}
           >
-            連接Spotify
+            連結 <FaSpotify className="ml-2 text-white w-4 h-4 xl:w-6 xl:h-6" />
           </button>
         )}
 
@@ -208,6 +224,13 @@ function NewDiaryEntry() {
           </button>
         </div>
       </div>
+      {alertMessage && (
+        <Alert
+          message={alertMessage}
+          onClose={() => setAlertMessage(null)}
+          onConfirm={alertConfirm}
+        />
+      )}
     </div>
   );
 }
