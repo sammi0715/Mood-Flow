@@ -7,6 +7,7 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
 import moodIcons from "../../utills/moodIcons";
 import Sidebar from "../Sidebar";
+import Alert from "../../utills/alert";
 import {
   format,
   addMonths,
@@ -44,6 +45,8 @@ function DiaryCalendar() {
   const throttleTimeout = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertConfirm, setAlertConfirm] = useState(null);
 
   useEffect(() => {
     const loadDiaries = async () => {
@@ -53,7 +56,7 @@ function DiaryCalendar() {
         setDiaries(diaryData);
       } catch (error) {
         console.error("Error loading diaries: ", error);
-        alert(`加載日記時出錯：${error.message}`);
+        setAlertMessage(`加載日記時出錯：${error.message}`);
       }
     };
 
@@ -61,7 +64,7 @@ function DiaryCalendar() {
       loadDiaries();
     } else {
       console.warn("User ID is undefined.");
-      alert("用戶ID未定義，無法加載日記。");
+      setAlertMessage("用戶ID未定義，無法加載日記。");
     }
   }, [userId]);
 
@@ -71,7 +74,7 @@ function DiaryCalendar() {
 
     // 禁止點擊未來日期
     if (day > today) {
-      alert("時間還沒到喔😗～");
+      setAlertMessage("時間還沒到喔😗～");
       return;
     }
 
@@ -135,15 +138,24 @@ function DiaryCalendar() {
   };
 
   const handleWheel = (e) => {
+    e.stopPropagation();
+
     if (throttleTimeout.current === null) {
-      if (e.deltaY > 0) {
-        nextMonth();
-      } else if (e.deltaY < 0) {
-        prevMonth();
+      const absDeltaX = Math.abs(e.deltaX);
+      const absDeltaY = Math.abs(e.deltaY);
+
+      console.log("deltaX:", e.deltaX, "deltaY:", e.deltaY);
+
+      if (absDeltaX > 3 * absDeltaY && absDeltaX > 0.5) {
+        if (e.deltaX < 0) {
+          prevMonth();
+        } else if (e.deltaX > 0) {
+          nextMonth();
+        }
+        throttleTimeout.current = setTimeout(() => {
+          throttleTimeout.current = null;
+        }, 300);
       }
-      throttleTimeout.current = setTimeout(() => {
-        throttleTimeout.current = null;
-      }, 300);
     }
   };
 
@@ -152,12 +164,12 @@ function DiaryCalendar() {
   const monthInChinese = monthsInChinese[formattedMonth];
 
   return (
-    <div className="flex flex-col min-h-screen overflow-y-auto">
+    <div className="flex  min-h-screen">
       {/* Sidebar */}
       <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
 
-      <div className="flex-grow p-4 lg:p-16 bg-back">
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-grow flex-col p-4  bg-back">
+        <div className="flex items-center justify-between mb-4">
           {/* 左側的 menu icon */}
           <div className="flex-none">
             <TiThMenu
@@ -167,7 +179,7 @@ function DiaryCalendar() {
           </div>
 
           {/* 中間的年份和月份 */}
-          <div className="flex items-center justify-center space-x-4">
+          <div className="flex items-center justify-center space-x-2">
             <button
               onClick={prevMonth}
               className="mr-4 text-dark-blue hover:text-dark-blue transition duration-300"
@@ -220,15 +232,22 @@ function DiaryCalendar() {
         </div>
         {/* 日曆 */}
         <div
-          className="grid grid-cols-7 gap-y-4 gap-x-2 md:gap-2 lg:gap-4 text-center mt-2"
+          className="grid grid-cols-7 gap-y-2 gap-x-2 md:gap-2 lg:gap-4 text-center mt-2"
           onWheel={handleWheel}
         >
           {renderDays()}
         </div>{" "}
-        <div className="flex justify-center items-center mt-8">
+        <div className="flex justify-center items-center mt-4 mb-12">
           <img src={pencil} className="w-3/4"></img>
         </div>
       </div>
+      {alertMessage && (
+        <Alert
+          message={alertMessage}
+          onClose={() => setAlertMessage(null)}
+          onConfirm={alertConfirm}
+        />
+      )}
     </div>
   );
 }
