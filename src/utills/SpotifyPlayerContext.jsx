@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-
+import Alert from "./alert";
 const generateCodeVerifier = (length = 128) => {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
   let verifier = "";
@@ -35,6 +35,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [spotifyToken, setSpotifyToken] = useState(() => localStorage.getItem("spotify_token"));
+  const [alertMessage, setAlertMessage] = useState(null);
 
   const navigate = useNavigate();
   const initializePlayer = useCallback(() => {
@@ -220,7 +221,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
         console.error("Failed to refresh token:", data);
         if (data.error === "invalid_grant") {
           localStorage.removeItem("spotify_refresh_token");
-          alert("您的 Spotify 連線已過期，請重新登入。");
+          setAlertMessage("您的 Spotify 連線已過期，請重新登入。");
         }
         return false;
       }
@@ -368,7 +369,10 @@ export const SpotifyPlayerProvider = ({ children }) => {
   };
 
   return (
-    <SpotifyPlayerContext.Provider value={contextValue}>{children}</SpotifyPlayerContext.Provider>
+    <SpotifyPlayerContext.Provider value={contextValue}>
+      {children}{" "}
+      {alertMessage && <Alert message={alertMessage} onClose={() => setAlertMessage(null)} />}
+    </SpotifyPlayerContext.Provider>
   );
 };
 
