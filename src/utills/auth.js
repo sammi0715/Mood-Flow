@@ -50,6 +50,8 @@ export const signUpUser = async (name, email, password, profile_pic) => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
+        localStorage.setItem("user_uid", user.uid);
+
         await setDoc(doc(db, "users", user.uid), {
             name,
             email,
