@@ -5,8 +5,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { auth } from "../utills/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { RiNotification4Fill } from "react-icons/ri";
-import { searchUserByName, sendFriendRequest, listenToFriends } from "../utills/firebase-data";
-import { listenToFriendRequests, markRequestAsRead } from "../utills/firebase-data";
+import {
+  searchUserByName,
+  sendFriendRequest,
+  listenToFriends,
+  listenToFriendRequests,
+  markRequestAsRead,
+} from "../utills/firebase-data";
+import Alert from "../utills/alert";
 
 function Header() {
   const navigate = useNavigate();
@@ -15,11 +21,14 @@ function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [friendRequests, setFriendRequests] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [friendRequestsSent, setFriendRequestsSent] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertConfirm, setAlertConfirm] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -71,6 +80,7 @@ function Header() {
     setShowNotifications(false);
     setSearchQuery("");
     setSearchResults([]);
+    setHasSearched(false);
   };
 
   useEffect(() => {
@@ -106,23 +116,31 @@ function Header() {
     try {
       const results = await searchUserByName(searchQuery);
       setSearchResults(results);
+      setHasSearched(true);
     } catch (error) {
       console.error("搜尋使用者失敗：", error);
-      alert("搜尋使用者失敗，請稍後再試。");
+      setAlertMessage("搜尋使用者失敗，請稍後再試。");
     }
   };
 
   // 發送好友邀請
   const handleSendFriendRequest = async (targetUser) => {
-    if (!user) return alert("請先登入以發送好友邀請");
+    if (!user) {
+      setAlertMessage("請先登入以發送好友邀請");
+      return;
+    }
 
     try {
       await sendFriendRequest(user.uid, targetUser);
       setFriendRequestsSent((prev) => [...prev, targetUser.id]);
-      alert(`已向 ${targetUser.name} 發送好友邀請`);
+      setAlertMessage(`已向 ${targetUser.name} 發送好友邀請`);
+      // 自動關閉 Alert
+      setTimeout(() => {
+        setAlertMessage(null);
+      }, 2000);
     } catch (error) {
       console.error("發送好友邀請失敗：", error);
-      alert("發送好友邀請失敗，請稍後再試。");
+      setAlertMessage("發送好友邀請失敗，請稍後再試。");
     }
   };
 
@@ -211,7 +229,10 @@ function Header() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setHasSearched(false);
+              }}
               placeholder="搜尋使用者名稱"
               className="w-full p-2 border border-gray-300 rounded"
             />
@@ -272,14 +293,23 @@ function Header() {
                 })}
               </ul>
             )}
-
+            {hasSearched && searchResults.length === 0 && (
+              <p className="mt-2 text-sm text-gray-600">未有該用戶資料</p>
+            )}
             {/* 顯示搜尋結果為空的情況 */}
-            {searchResults.length === 0 && searchQuery.trim() !== "" && (
+            {!hasSearched && searchQuery.trim() !== "" && (
               <p className="mt-2 text-sm text-gray-600">按下搜尋開始尋找</p>
             )}
           </div>
         )}
       </div>
+      {alertMessage && (
+        <Alert
+          message={alertMessage}
+          onClose={() => setAlertMessage(null)}
+          onConfirm={alertConfirm}
+        />
+      )}
     </header>
   );
 }
