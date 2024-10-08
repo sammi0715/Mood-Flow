@@ -12,6 +12,7 @@
   "dependencies": {
     "date-fns": "^4.0.0-beta.1",
     "firebase": "^10.13.1",
+    "gsap": "^3.12.5",
     "pkce-challenge": "^4.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
