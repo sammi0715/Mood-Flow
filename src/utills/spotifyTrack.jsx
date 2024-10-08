@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import { useSpotifyPlayer } from "./SpotifyPlayerContext";
 import { LuPlusCircle, LuCheckCircle } from "react-icons/lu";
-
+import Alert from "./alert";
 export const SpotifyTracks = ({ onSelectTrack }) => {
   const [tracks, setTracks] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTracks, setSelectedTracks] = useState({});
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertConfirm, setAlertConfirm] = useState(null);
   const {
     player,
     handleTrackSelect,
@@ -80,7 +82,7 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
 
   const handlePlayPause = async (track) => {
     if (!spotifyToken) {
-      alert("請先登入 Spotify。");
+      setAlertMessage("請先登入 Spotify。");
       return;
     }
 
@@ -205,6 +207,13 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
           ))}
         </div>
       </div>
+      {alertMessage && (
+        <Alert
+          message={alertMessage}
+          onClose={() => setAlertMessage(null)}
+          onConfirm={alertConfirm}
+        />
+      )}
     </div>
   );
 };
