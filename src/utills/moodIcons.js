@@ -1,5 +1,3 @@
-// src/utils/moodIcons.js
-
 import happy from "../assets/images/happy.png";
 import joy from "../assets/images/joy.png";
 import excited from "../assets/images/excited.png";
