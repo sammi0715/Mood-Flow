@@ -2,6 +2,7 @@ import { db, storage, auth } from "./firebase";
 import { collection, getDocs, addDoc, query, where, serverTimestamp, updateDoc, deleteDoc, getDoc, doc, orderBy, onSnapshot, writeBatch } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { format } from "date-fns";
+
 export const fetchDiaries = async (userId) => {
     try {
         const diariesRef = collection(db, "diaries");
@@ -171,15 +172,14 @@ export const handleImageUpload = (event, uploadedImages, setUploadedImages) => {
 
         const files = Array.from(event.target.files);
         if (files.length + uploadedImages.length > 3) {
-            alert("您最多只能上傳三張圖片。");
-            reject(new Error("超過上傳圖片的限制"));
+            reject(new Error("您最多只能上傳三張圖片。"));
             return;
         }
 
         files.forEach((file) => {
 
             if (!file.type.startsWith("image/")) {
-                alert("請上傳圖片檔案");
+                ("請上傳圖片檔案");
                 reject(new Error("無效的檔案類型"));
                 return;
             }
