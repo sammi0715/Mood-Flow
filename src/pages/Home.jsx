@@ -1,10 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IoClose } from "react-icons/io5";
 import { FaCircleUser, FaCirclePlus } from "react-icons/fa6";
+import { FcGoogle } from "react-icons/fc";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { signUpUser, loginUser, signInWithGoogle, handleSetUsername } from "../utills/auth";
-import { FcGoogle } from "react-icons/fc";
+import { auth } from "../utills/firebase";
+import Alert from "../utills/alert";
+import moodIcons from "../utills/moodIcons";
+import logo from "../assets/images/logo-1.png";
+import gsap from "gsap";
+
 function Home() {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
@@ -13,6 +19,30 @@ function Home() {
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertConfirm, setAlertConfirm] = useState(null);
+
+  useEffect(() => {
+    gsap.utils.toArray(".emoji").forEach((emoji) => {
+      gsap.to(emoji, {
+        x: () => gsap.utils.random(-50, 50),
+        y: () => gsap.utils.random(-30, 30),
+        duration: gsap.utils.random(3, 5),
+        ease: "power1.inOut",
+        repeat: -1,
+        yoyo: true,
+      });
+    });
+  }, []);
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        navigate(`/diary-calendar/${user.uid}`);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   const {
     register: signUpRegister,
@@ -58,21 +88,26 @@ function Home() {
     const { name, email, password } = data;
     try {
       const user = await signUpUser(name, email, password, selectedImageURL);
-      alert("註冊成功！");
-      navigate(`/diary-calendar/${user.uid}`);
+      setAlertMessage("註冊成功！");
+      setAlertConfirm(() => () => {
+        navigate(`/diary-calendar/${user.uid}`);
+      });
     } catch (error) {
-      alert(error.message);
+      setAlertMessage(error.message); // 顯示錯誤訊息
     }
   };
 
   const onLogin = async (data) => {
     const { email, password } = data;
+
     try {
       const user = await loginUser(email, password);
-      alert("登入成功！");
-      navigate(`/diary-calendar/${user.uid}`);
+      setAlertMessage("登入成功！");
+      setTimeout(() => {
+        navigate(`/diary-calendar/${user.uid}`);
+      }, 2000);
     } catch (error) {
-      alert(error.message);
+      setAlertMessage(error.message); // 顯示錯誤訊息
     }
   };
 
@@ -85,52 +120,99 @@ function Home() {
         // 顯示設定帳號名稱的介面
         setShowSetUsername(true);
       } else {
-        alert("Google 登入成功！");
-        navigate(`/diary-calendar/${user.uid}`);
+        setAlertMessage("Google 登入成功！");
+
+        setTimeout(() => {
+          navigate(`/diary-calendar/${user.uid}`);
+        }, 2000);
       }
     } catch (error) {
-      alert("Google 登入失敗: " + error.message);
+      setAlertMessage("Google 登入失敗: " + error.message);
     }
   };
 
   const handleUsernameSubmit = async () => {
     try {
       await handleSetUsername(username);
-      alert("帳號名稱設定成功！");
+      setAlertMessage("帳號名稱設定成功！");
       setShowSetUsername(false);
       navigate(`/diary-calendar/${auth.currentUser.uid}`);
     } catch (error) {
-      setError(error.message);
+      setAlertMessage(error.message);
     }
   };
 
   return (
-    <div className="relative w-full h-screen lg:bg-mood-flow-banner xl:bg-mood-flow-banner bg-mobile-mood-flow-banner bg-cover bg-center bg-no-repeat xl:bg-120-100 lg:bg-130-100 md:bg-100-130">
-      <div className="absolute bottom-48 md:bottom-72 lg:bottom-56 w-full flex flex-col justify-center items-center">
-        <button
-          onClick={handleLoginClick}
-          className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-orange-200"
-        >
-          登入
-        </button>
+    <div className="relative w-full h-screen bg-cover bg-center bg-no-repeat  ">
+      <div className=" bg-back h-full">
+        <div className="flex justify-center">
+          <img src={logo} className="w-8/12 h-8/12 md:w-2/4 md:h-2/4 pt-36 lg:pt-20 md:pt-32" />
+        </div>
 
-        <button
-          onClick={handleSignUpClick}
-          className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-amber-200 mt-4 xl:mt-9"
-        >
-          註冊
-        </button>
-        <div className="flex flex-col items-center justify-center mt-4">
-          <p className="text-sm text-center text-gray-700 relative before:block before:absolute before:left-[-50px] before:top-[50%] before:w-[40px] before:border-t before:border-gray-300 after:block after:absolute after:right-[-50px] after:top-[50%] after:w-[40px] after:border-t after:border-gray-300">
-            或使用以下進行
-          </p>
-
-          <FcGoogle
-            className="h-6 w-6  xl:h-8 xl:w-8 mt-2 cursor-pointer"
-            onClick={handleGoogleSignIn}
+        {/* 如果有 Alert 訊息，則顯示 CustomAlert */}
+        {alertMessage && (
+          <Alert
+            message={alertMessage}
+            onClose={() => setAlertMessage(null)}
+            onConfirm={alertConfirm}
           />
+        )}
+        <img
+          src={moodIcons.開心}
+          alt="開心"
+          className="emoji absolute w-48 h-48 -left-24 -top-8 md:-left-40 md:w-64 md:h-64 lg:w-80 lg:h-80 transform scale-x-[-1]"
+        />
+        <img
+          src={moodIcons.哭泣}
+          alt="哭泣"
+          className="emoji absolute top-72 md:top-[35%] w-32 h-32 -left-12 md:-left-16 md:w-48 md:h-48 transform scale-x-[-1]"
+        />
+        <img
+          src={moodIcons.快樂}
+          alt="快樂"
+          className="emoji absolute w-32 h-32 right-6 top-[27%] md:right-12 md:w-52 md:h-52 lg:w-80 lg:h-80 -rotate-12"
+        />
+        <img
+          src={moodIcons.興奮}
+          alt="興奮"
+          className="emoji absolute w-40 h-40 bottom-20 md:bottom-[15%%] -left-4 md:left-5 md:w-64 md:h-64 lg:w-72 lg:h-72 lg:bottom-[5%] transform scale-x-[-1]"
+        />
+        <img
+          src={moodIcons.生氣}
+          alt="生氣"
+          className="emoji absolute w-24 h-24 -top-2 right-12 md:w-36 md:h-36 lg:w-48 lg:h-48 rotate-12"
+        />
+        <img
+          src={moodIcons.平靜}
+          alt="平靜"
+          className="emoji absolute w-32 h-32 bottom-20 md:bottom-16 right-4 md:w-52 md:h-52"
+        />
+        <div className="w-full flex flex-col justify-center items-center mt-24">
+          <button
+            onClick={handleLoginClick}
+            className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-orange-200"
+          >
+            登入
+          </button>
+          <button
+            onClick={handleSignUpClick}
+            className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-amber-200 mt-4 xl:mt-9"
+          >
+            註冊
+          </button>
+          <div className="flex flex-col items-center justify-center mt-4">
+            <p className="text-sm text-center text-gray-700 relative before:block before:absolute before:left-[-50px] before:top-[50%] before:w-[40px] before:border-t before:border-gray-500 after:block after:absolute after:right-[-50px] after:top-[50%] after:w-[40px] after:border-t after:border-gray-500">
+              或使用以下進行
+            </p>
+
+            <FcGoogle
+              className="h-6 w-6  xl:h-8 xl:w-8 mt-2 cursor-pointer"
+              onClick={handleGoogleSignIn}
+            />
+          </div>
         </div>
       </div>
+
       {/* 登入視窗 */}
       {showLogin && (
         <div className="bg-gray-200 bg-opacity-50 fixed inset-0 flex justify-center items-center">
@@ -174,12 +256,12 @@ function Home() {
         <div className="bg-gray-200 bg-opacity-50 fixed inset-0 flex justify-center items-center">
           <div className="bg-white p-8 rounded shadow-lg w-96">
             <div className="flex justify-between">
-              <h2 className="text-2xl mb-3">設定帳號名稱</h2>
+              <h2 className="text-2xl mb-3">設定使用者名稱</h2>
               <IoClose onClick={() => setShowSetUsername(false)} className="h-8 w-8" />
             </div>
             <div className="space-y-4">
               <div>
-                <label>帳號名稱</label>
+                <label>使用者名稱</label>
                 <input
                   type="text"
                   value={username}
@@ -232,17 +314,17 @@ function Home() {
 
             <form onSubmit={handleSignUpSubmit(onSignUp)} className="space-y-4">
               <div>
-                <label>帳號</label>
+                <label>使用者名稱</label>
                 <input
                   type="text"
                   {...signUpRegister("name", {
-                    required: "請設定帳號",
+                    required: "請設定使用者名稱",
                     pattern: {
                       value: /^[a-zA-Z0-9]{4,15}$/,
-                      message: "帳號名稱必須是 4-15 個字元的英文字母或數字",
+                      message: "使用者名稱必須是 4-15 個字元的英文字母或數字",
                     },
                   })}
-                  placeholder="帳號"
+                  placeholder="使用者名稱"
                   className="border border-gray-300 p-2 w-full rounded"
                 />
                 {signUpErrors.name && <p className="text-red-500">{signUpErrors.name.message}</p>}
