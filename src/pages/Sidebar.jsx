@@ -83,30 +83,31 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
 
         {/* 側邊選單的項目 */}
         <ul>
-          <li className="mb-4 flex items-center hover:bg-light-yellow p-2 rounded-md cursor-pointer">
-            <FaUser className="mr-2 w-4 h-4 lg:w-6 lg:h-6" />
-            <Link to={`/community/${userId}`} className="text-sm lg:text-lg">
+          {" "}
+          <Link to={`/community/${userId}`} className="text-sm lg:text-lg">
+            <li className="mb-4 flex items-center hover:bg-light-yellow p-2 rounded-md cursor-pointer">
+              <FaUser className="mr-2 w-4 h-4 lg:w-6 lg:h-6" />
               社群
-            </Link>
-          </li>
-          <li className="mb-4 flex items-center hover:bg-light-yellow p-2 rounded-md cursor-pointer">
-            <TiChartBar className="mr-2 w-4 h-4 lg:w-6 lg:h-6" />
-            <Link to={`/mood-track/${userId}`} className="text-sm lg:text-lg">
+            </li>
+          </Link>
+          <Link to={`/mood-track/${userId}`} className="text-sm lg:text-lg">
+            <li className="mb-4 flex items-center hover:bg-light-yellow p-2 rounded-md cursor-pointer">
+              <TiChartBar className="mr-2 w-4 h-4 lg:w-6 lg:h-6" />
               心情統計
-            </Link>
-          </li>
-          <li className="mb-4 flex items-center hover:bg-light-yellow p-2 rounded-md cursor-pointer">
-            <FaHistory className="mr-2 w-4 h-4 lg:w-6 lg:h-6" />
-            <Link to={`/history-review/${userId}`} className="text-sm lg:text-lg">
+            </li>
+          </Link>
+          <Link to={`/history-review/${userId}`} className="text-sm lg:text-lg">
+            <li className="mb-4 flex items-center hover:bg-light-yellow p-2 rounded-md cursor-pointer">
+              <FaHistory className="mr-2 w-4 h-4 lg:w-6 lg:h-6" />
               歷史回顧
-            </Link>
-          </li>
-          <li className="mb-4 flex items-center hover:bg-light-yellow p-2 rounded-md cursor-pointer">
-            <IoIosSettings className="mr-2 w-4 h-4 lg:w-6 lg:h-6" />
-            <Link to={`/settings/${userId}`} className="text-sm lg:text-lg">
+            </li>
+          </Link>
+          <Link to={`/settings/${userId}`} className="text-sm lg:text-lg">
+            <li className="mb-4 flex items-center hover:bg-light-yellow p-2 rounded-md cursor-pointer">
+              <IoIosSettings className="mr-2 w-4 h-4 lg:w-6 lg:h-6" />
               設定
-            </Link>
-          </li>
+            </li>
+          </Link>
         </ul>
 
         {/* 登出按鈕 */}
