@@ -7,6 +7,7 @@ import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import moodIcons from "../utills/moodIcons";
 import Sidebar from "../pages/Sidebar";
 import { TiThMenu } from "react-icons/ti";
+import Alert from "../utills/alert";
 
 const monthNamesInChinese = {
   January: "一月",
@@ -33,12 +34,12 @@ function HistoryReview() {
   const { isPlaying, currentTrack, handlePlayPause, handleTrackSelect } = useSpotifyPlayer();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertConfirm, setAlertConfirm] = useState(null);
   const today = new Date();
   const monthInEnglish = format(subMonths(today, 1), "MMMM");
-  // 從對照表獲取中文月份名稱
   const monthInChinese = monthNamesInChinese[monthInEnglish];
 
-  // 最終顯示結果： 英文月份 / 中文月份
   const formattedMonth = `${monthInEnglish}  ${monthInChinese}`;
 
   useEffect(() => {
@@ -77,6 +78,8 @@ function HistoryReview() {
         format(endDate, "yyyy-MM-dd")
       );
       setHistoryData(data);
+      setStartDate(startDate);
+      setEndDate(endDate);
     } catch (error) {
       console.error("Error fetching filtered data:", error);
     }
@@ -94,13 +97,24 @@ function HistoryReview() {
   };
 
   const handleDateRangeFilter = () => {
-    if (startDate && endDate) {
-      setIsFiltered(true);
-      fetchFilteredData(new Date(startDate), new Date(endDate));
-    } else {
-      alert("請選擇完整日期區間");
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (!startDate || !endDate) {
+      setAlertMessage("請選擇完整的日期區間");
+      return;
     }
+
+    if (start > end) {
+      setAlertMessage("開始日期不能大於結束日期");
+      return;
+    }
+
+    // 開始篩選資料
+    setIsFiltered(true);
+    fetchFilteredData(start, end);
   };
+
   //固定區間
   const handleFilterChange = async (e) => {
     const today = new Date();
@@ -153,20 +167,22 @@ function HistoryReview() {
           />
           <h1 className="text-2xl sm:text-3xl">歷史回顧</h1>
         </div>
+
         {/* 日期與區間篩選器 */}
-        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 max-w-5xl mx-auto">
           <div className="flex flex-col">
             <label className="mb-2 text-sm sm:text-base">篩選日期區間：</label>
             <div className="flex">
               <input
                 type="date"
-                value={startDate}
+                value={startDate ? format(new Date(startDate), "yyyy-MM-dd") : ""}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="border p-2 mr-2 rounded-lg"
               />
+
               <input
                 type="date"
-                value={endDate}
+                value={endDate ? format(new Date(endDate), "yyyy-MM-dd") : ""}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="border p-2 rounded-lg"
               />
@@ -191,7 +207,16 @@ function HistoryReview() {
         </div>
 
         <h1 className="text-2xl sm:text-3xl mb-6">
-          {isFiltered ? "回顧內容" : `上個月的今天:  ${formattedMonth}/${format(today, "dd")}`}
+          {isFiltered
+            ? `回顧內容 (${
+                startDate && !isNaN(new Date(startDate))
+                  ? format(new Date(startDate), "yyyy-MM-dd")
+                  : "無效日期"
+              } - 
+       ${
+         endDate && !isNaN(new Date(endDate)) ? format(new Date(endDate), "yyyy-MM-dd") : "無效日期"
+       })`
+            : `上個月的今天:  ${formattedMonth}/${format(today, "dd")}`}
         </h1>
 
         {/* 日記顯示區域 */}
@@ -200,7 +225,7 @@ function HistoryReview() {
             historyData.map((diary, index) => (
               <div
                 key={index}
-                className="border rounded-lg p-4 bg-white shadow-lg flex flex-col lg:flex-row lg:w-10/12 items-center"
+                className="border rounded-lg p-4 bg-white shadow-lg flex flex-col lg:flex-row lg:w-10/12"
               >
                 {/* 左側心情圖標與文字 */}
                 <div className="flex flex-col lg:flex-row flex-grow lg:w-2/3 ">
@@ -283,6 +308,13 @@ function HistoryReview() {
             </button>
           </div>
         </div>
+      )}
+      {alertMessage && (
+        <Alert
+          message={alertMessage}
+          onClose={() => setAlertMessage(null)}
+          onConfirm={alertConfirm}
+        />
       )}
     </div>
   );
