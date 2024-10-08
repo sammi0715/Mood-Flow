@@ -14,7 +14,7 @@ import {
   deleteFriend,
 } from "../utills/firebase-data";
 import moodIcons from "../utills/moodIcons";
-import { FaRegHeart, FaHeart, FaRegComment } from "react-icons/fa";
+import { FaRegHeart, FaHeart, FaRegComment, FaSearch } from "react-icons/fa";
 import { IoIosClose, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { IoCloseCircle } from "react-icons/io5";
 import { auth } from "../utills/firebase";
@@ -22,7 +22,8 @@ import { LiaUserFriendsSolid } from "react-icons/lia";
 import { RiUser5Fill } from "react-icons/ri";
 import Sidebar from "../pages/Sidebar";
 import { TiThMenu } from "react-icons/ti";
-
+import Alert from "./../utills/alert";
+import Confirm from "./../utills/confirm";
 function Community() {
   const [friends, setFriends] = useState([]);
   const [isFriendsListOpen, setIsFriendsListOpen] = useState(true);
@@ -37,6 +38,12 @@ function Community() {
   const [showCommentInput, setShowCommentInput] = useState({});
   const [userProfiles, setUserProfiles] = useState({});
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertConfirm, setAlertConfirm] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [onConfirmAction, setOnConfirmAction] = useState(null);
+
   const { userId } = useParams();
 
   useEffect(() => {
@@ -100,20 +107,18 @@ function Community() {
     const currentUser = auth.currentUser;
 
     if (!currentUser) {
-      alert("用戶未登錄");
+      setAlertMessage("用戶未登錄");
       return;
     }
 
     try {
       await acceptFriendRequest(request.userId, currentUser.uid);
       await deleteFriendRequest(currentUser.uid, request.id);
-      alert("雙方已成為好友");
+      setAlertMessage("雙方已成為好友");
 
-      // 刷新好友列表
       const updatedFriends = await fetchFriends(currentUser.uid);
       setFriends(updatedFriends);
 
-      // 移除已接受的好友请求
       setFriendRequests((prevRequests) => prevRequests.filter((req) => req.id !== request.id));
     } catch (error) {
       console.error("接受好友邀請時錯誤：", error);
@@ -121,38 +126,52 @@ function Community() {
     }
   };
 
-  const handleDeleteFriend = async (friendId) => {
-    const confirmDelete = window.confirm("確定要刪除這位好友嗎？");
-    if (confirmDelete) {
+  const handleDeleteFriend = (friendId) => {
+    setConfirmMessage("確定要刪除這位好友嗎？");
+    setOnConfirmAction(() => async () => {
       try {
         await deleteFriend(userId, friendId);
-        alert("好友已刪除");
+        setAlertMessage("好友已刪除");
+
         // 更新好友列表
         const updatedFriends = friends.filter((friend) => friend.id !== friendId);
         setFriends(updatedFriends);
+
+        // 檢查並清空已選中的好友
+        if (selectedFriend?.id === friendId) {
+          setSelectedFriend(null);
+        }
       } catch (error) {
         console.error("刪除好友時發生錯誤:", error);
-        alert("刪除好友時發生錯誤，請稍後再試。");
+        setAlertMessage("刪除好友時發生錯誤，請稍後再試。");
+      } finally {
+        setShowConfirmDialog(false);
       }
-    }
+    });
+    setShowConfirmDialog(true);
   };
 
-  // 拒絕好友邀請
-  const handleRejectFriendRequest = async (requestId) => {
-    try {
-      await deleteFriendRequest(userId, requestId);
-      alert("好友邀請已刪除！");
-    } catch (err) {
-      console.error("刪除好友邀請失敗：", err);
-      setError("刪除好友邀請失敗，請稍後再試。");
-    }
+  const handleRejectFriendRequest = (requestId) => {
+    setConfirmMessage("確定要拒絕這個好友邀請嗎？");
+    setOnConfirmAction(() => async () => {
+      try {
+        await deleteFriendRequest(userId, requestId);
+        setAlertMessage("好友邀請已刪除！");
+      } catch (err) {
+        console.error("刪除好友邀請失敗：", err);
+        setError("刪除好友邀請失敗，請稍後再試。");
+      } finally {
+        setShowConfirmDialog(false);
+      }
+    });
+    setShowConfirmDialog(true);
   };
-  // 處理留言
+
   const handleAddComment = async (diaryId) => {
     const commentText = commentTexts[diaryId];
     if (!commentText?.trim()) return;
     if (!auth.currentUser) {
-      alert("請先登入才能執行此操作");
+      setAlertMessage("請先登入才能執行此操作");
       return;
     }
     try {
@@ -168,11 +187,10 @@ function Community() {
   const handleToggleCommentInput = (diaryId) => {
     setShowCommentInput((prev) => ({
       ...prev,
-      [diaryId]: !prev[diaryId], // 切換顯示/隱藏
+      [diaryId]: !prev[diaryId],
     }));
   };
 
-  // 處理按讚
   const handleToggleLike = async (diaryId) => {
     try {
       const currentLikes = likeStatuses[diaryId] || [];
@@ -185,7 +203,7 @@ function Community() {
       console.error("更新按讚狀態時出錯:", error);
     }
   };
-  // 處理留言框輸入
+
   const handleCommentTextChange = (diaryId, text) => {
     setCommentTexts((prev) => ({ ...prev, [diaryId]: text }));
   };
@@ -206,7 +224,21 @@ function Community() {
 
   return (
     <div className="min-h-screen flex flex-row-reverse">
-      {/* 左側：好友列表 */}
+      {alertMessage && (
+        <Alert
+          message={alertMessage}
+          onClose={() => setAlertMessage(null)}
+          onConfirm={alertConfirm}
+        />
+      )}
+      {showConfirmDialog && (
+        <Confirm
+          message={confirmMessage}
+          onConfirm={onConfirmAction}
+          onCancel={() => setShowConfirmDialog(false)}
+        />
+      )}
+
       <div
         className={`fixed  right-0 h-screen bg-light-green transition-transform duration-300 ${
           isFriendsListOpen ? "translate-x-full" : "translate-x-0"
@@ -220,7 +252,11 @@ function Community() {
         </button>
 
         <div className="p-2">
-          <h2 className="text-base lg:text-xl mb-4 mt-4 lg:mt-6 ml-4">好友列表</h2>
+          <h2 className="text-base lg:text-xl mt-4 lg:mt-6 ml-4">好友列表</h2>
+          <h3 className="flex items-center text-xs lg:text-sm mb-4 lg:mt-6 ml-4 text-gray-600">
+            <FaSearch className="mr-1" />
+            點擊上方搜尋好友
+          </h3>
           <ul>
             {friends.map((friend) => (
               <li
@@ -240,7 +276,7 @@ function Community() {
           </ul>
         </div>
       </div>
-      {/* 右側：好友日記動態、好友邀請、搜尋功能 */}
+
       <div className="flex-1 overflow-auto">
         {/* 好友邀請通知 */}
         <div className="mb-6">
@@ -257,25 +293,31 @@ function Community() {
                 <RiUser5Fill className=" w-8 h-8 text-dark-green text-center items-center" />
               </button>
             </div>
-            <ul className="">
+            <ul className="mt-4">
               {friendRequests.length > 0 ? (
                 friendRequests.map((request) => (
-                  <li key={request.id} className="mb-2 mt-6 items-center flex text-base">
-                    <span>
-                      {request.name} ({request.email})
-                    </span>
-                    <button
-                      onClick={() => handleAcceptFriendRequest(request)}
-                      className="ml-2 md:ml-4 p-1 text-xs lg:text-base bg-dark-orange text-white rounded"
-                    >
-                      接受
-                    </button>
-                    <button
-                      onClick={() => handleRejectFriendRequest(request.id)}
-                      className=" text-white rounded items-center"
-                    >
-                      <IoCloseCircle className="w-7 h-7 text-pink-orange ml-4" />
-                    </button>
+                  <li
+                    key={request.id}
+                    className="mb-4 flex justify-between items-center bg-white p-2 rounded-lg shadow-md xl:w-[45%] lg:w-[45%] md:w-[45%]"
+                  >
+                    <div className="flex items-center">
+                      <span className="text-lg font-medium">{request.name}</span>
+                      <span className="text-gray-500 ml-2">({request.email})</span>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleAcceptFriendRequest(request)}
+                        className="ml-2 md:ml-4 p-1 text-xs lg:text-base bg-dark-orange text-white rounded "
+                      >
+                        接受
+                      </button>
+                      <button
+                        onClick={() => handleRejectFriendRequest(request.id)}
+                        className="text-white rounded items-center"
+                      >
+                        <IoCloseCircle className="w-7 h-7 text-pink-orange ml-4" />
+                      </button>
+                    </div>
                   </li>
                 ))
               ) : (
