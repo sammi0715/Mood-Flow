@@ -7,7 +7,7 @@ import moodIcons from "../../utills/moodIcons";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
 import { IoMdCloseCircle } from "react-icons/io";
-
+import Alert from "../../utills/alert";
 import {
   updateDiary,
   deleteDiary,
@@ -31,7 +31,8 @@ function ViewDiaryEntry() {
   const [updatedImages, setUpdatedImages] = useState([]);
   const [uploadedImages, setUploadedImages] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertConfirm, setAlertConfirm] = useState(null);
   const {
     isPlaying,
     setIsPlaying,
@@ -62,12 +63,12 @@ function ViewDiaryEntry() {
           setUpdatedImages(diaryData.imageUrls || []);
         } else {
           console.log("No such document!");
-          alert("找不到該日記條目。");
+          setAlertMessage("找不到該日記。");
           navigate("/diary-calendar");
         }
       } catch (error) {
         console.error("Error fetching diary: ", error);
-        alert("加載日記時出錯，請稍後再試。");
+        setAlertMessage("加載日記時出錯，請稍後再試。");
       } finally {
         setLoading(false);
       }
@@ -80,7 +81,7 @@ function ViewDiaryEntry() {
 
   const handlePlayButton = async () => {
     if (!spotifyToken) {
-      alert("請先登錄 Spotify。");
+      setAlertMessage("請先登錄 Spotify");
       return;
     }
 
@@ -111,6 +112,11 @@ function ViewDiaryEntry() {
     });
   };
   const handleSave = async () => {
+    if (!updatedMood) {
+      setAlertMessage("請選擇一個心情圖標！");
+      return;
+    }
+
     const allImages = [...updatedImages, ...uploadedImages];
     const updatedData = {
       content: updatedContent,
@@ -129,23 +135,30 @@ function ViewDiaryEntry() {
 
     try {
       await updateDiary(diaryId, updatedData);
-      setIsEditing(false);
-      alert("日記更新成功！");
-      navigate(`/diary-calendar/${userId}`);
+
+      setAlertMessage("日記更新成功！");
+
+      setAlertConfirm(() => () => {
+        setIsEditing(false);
+        navigate(`/diary-calendar/${userId}`);
+      });
     } catch (error) {
       console.error("Error updating diary: ", error);
-      alert("更新日記時出錯，請稍後再試。");
+      setAlertMessage("更新日記時出錯，請稍後再試");
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteDiary(diaryId);
-      alert("日記刪除成功！");
-      navigate(`/diary-calendar/${userId}`);
+      setAlertMessage("日記刪除成功！");
+
+      setAlertConfirm(() => () => {
+        navigate(`/diary-calendar/${userId}`);
+      });
     } catch (error) {
       console.error("Error deleting diary: ", error);
-      alert("刪除日記時出錯，請稍後再試。");
+      setAlertMessage("刪除日記時出錯，請稍後再試。");
     }
   };
 
@@ -160,7 +173,7 @@ function ViewDiaryEntry() {
   return (
     <div className="flex flex-col min-h-screen">
       <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-      <div className="flex-grow p-8">
+      <div className="flex-grow p-8 bg-back">
         <div className="flex items-center justify-between mb-6">
           <div className="flex-none">
             <TiThMenu
@@ -170,7 +183,7 @@ function ViewDiaryEntry() {
           </div>
 
           <div className="flex-grow text-center">
-            <h2 className="text-2xl ">Diary Entry</h2>
+            <h2 className=" text-2xl md:text-4xl ">Diary</h2>
           </div>
           <div className="flex-none">
             {isEditing && (
@@ -187,7 +200,7 @@ function ViewDiaryEntry() {
         </div>{" "}
         <h3 className="text-xl text-center mb-4">{diary.date}</h3>
         {isEditing ? (
-          <div className="flex-grow max-w-4xl mx-auto">
+          <div className="flex-grow max-w-4xl mx-auto  bg-light-beige bg-opacity-75 border-1 border border-gray-900 p-8 rounded-lg">
             <div className="mb-6">
               {/* 顯示選擇的心情圖標 */}
               {updatedMood && (
@@ -273,10 +286,10 @@ function ViewDiaryEntry() {
                       className="w-full h-32 object-cover rounded-lg"
                     />
                     <button
-                      onClick={() => handleRemoveImage(index, setUploadedImages)}
-                      className="absolute top-2 right-2 bg-light-yellow text-white rounded-full"
+                      onClick={() => handleRemoveImage(index, setUpdatedImages)}
+                      className="absolute top-2 right-2 text-white bg-white rounded-full"
                     >
-                      <IoMdCloseCircle className="text-white hover:text-amber-900 w-5 h-5 " />
+                      <IoMdCloseCircle className="text-light-pink hover:text-red-600 w-6 h-6 " />
                     </button>
                   </div>
                 ))}
@@ -310,7 +323,7 @@ function ViewDiaryEntry() {
             )}
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto mt-16 bg-light-beige bg-opacity-75 border-1 border border-gray-900 p-8 rounded-lg">
             <div className="flex items-center mb-4">
               <img src={moodIcons[diary.mood]} alt={diary.mood} className="h-14 w-14 mr-2" />
               <span className="text-lg">{diary.mood}</span>
@@ -363,6 +376,14 @@ function ViewDiaryEntry() {
               刪除
             </button>
           </div>
+        )}
+        {/* 如果有 Alert 訊息，則顯示 CustomAlert */}
+        {alertMessage && (
+          <Alert
+            message={alertMessage}
+            onClose={() => setAlertMessage(null)}
+            onConfirm={alertConfirm}
+          />
         )}
       </div>
     </div>
