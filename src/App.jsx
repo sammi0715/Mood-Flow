@@ -19,6 +19,7 @@ function App() {
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/*" element={<Home />} />
           <Route path="/diary-calendar/:userId" element={<DiaryCalendar />} />
           <Route path="/spotify-callback" element={<SpotifyCallback />} />
           <Route path="/view-diary/:diaryId" element={<ViewDiaryEntry />} />
