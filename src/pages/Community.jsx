@@ -9,7 +9,7 @@ import {
   listenToFriends,
   listenToFriendRequests,
   addComment,
-  fetchComments,
+  listenToComments,
   toggleLikeDiary,
   deleteFriend,
 } from "../utills/firebase-data";
@@ -17,8 +17,8 @@ import moodIcons from "../utills/moodIcons";
 import { FaRegHeart, FaHeart, FaRegComment, FaSearch } from "react-icons/fa";
 import { IoIosClose, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { IoCloseCircle } from "react-icons/io5";
+import { FaCircleUser } from "react-icons/fa6";
 import { auth } from "../utills/firebase";
-import { LiaUserFriendsSolid } from "react-icons/lia";
 import { RiUser5Fill } from "react-icons/ri";
 import Sidebar from "../pages/Sidebar";
 import { TiThMenu } from "react-icons/ti";
@@ -36,6 +36,7 @@ function Community() {
   const [diaryComments, setDiaryComments] = useState({});
   const [likeStatuses, setLikeStatuses] = useState({});
   const [showCommentInput, setShowCommentInput] = useState({});
+  const [showAllComments, setShowAllComments] = useState({});
   const [userProfiles, setUserProfiles] = useState({});
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
@@ -48,10 +49,23 @@ function Community() {
 
   useEffect(() => {
     if (userId) {
-      const unsubscribe = listenToFriends(userId, setFriends);
+      const unsubscribe = listenToFriends(userId, (updatedFriends) => {
+        console.log("Updated friends list: ", updatedFriends);
+        setFriends(updatedFriends);
+
+        // 檢查選中的好友是否還在好友列表中
+        if (selectedFriend) {
+          const isStillFriend = updatedFriends.some((friend) => friend.id === selectedFriend.id);
+          if (!isStillFriend) {
+            setSelectedFriend(null); // 如果已不再是好友，清除選取的好友
+            setAlertMessage("你已被移除好友，無法繼續查看內容");
+          }
+        }
+      });
+
       return () => unsubscribe();
     }
-  }, [userId]);
+  }, [userId, selectedFriend]);
 
   // 設置實時監聽好友請求
   useEffect(() => {
@@ -70,11 +84,17 @@ function Community() {
         try {
           const diaries = await fetchDiariesWithPermission(userId, selectedFriend.userId);
           setSelectedFriendDiaries(diaries);
-          diaries.forEach(async (diary) => {
-            const comments = await fetchComments(diary.id);
-            setDiaryComments((prev) => ({ ...prev, [diary.id]: comments }));
+
+          diaries.forEach((diary) => {
+            const unsubscribeComments = listenToComments(diary.id, (updatedComments) => {
+              setDiaryComments((prev) => ({ ...prev, [diary.id]: updatedComments }));
+            });
 
             setLikeStatuses((prev) => ({ ...prev, [diary.id]: diary.likes || [] }));
+
+            return () => {
+              unsubscribeComments();
+            };
           });
         } catch (err) {
           console.error("獲取好友日記出錯:", err);
@@ -114,6 +134,7 @@ function Community() {
     try {
       await acceptFriendRequest(request.userId, currentUser.uid);
       await deleteFriendRequest(currentUser.uid, request.id);
+
       setAlertMessage("雙方已成為好友");
 
       const updatedFriends = await fetchFriends(currentUser.uid);
@@ -176,8 +197,6 @@ function Community() {
     }
     try {
       await addComment(diaryId, commentText);
-      const updatedComments = await fetchComments(diaryId);
-      setDiaryComments((prev) => ({ ...prev, [diaryId]: updatedComments }));
       setCommentTexts((prev) => ({ ...prev, [diaryId]: "" }));
     } catch (error) {
       console.error("添加留言時出錯:", error);
@@ -186,6 +205,13 @@ function Community() {
 
   const handleToggleCommentInput = (diaryId) => {
     setShowCommentInput((prev) => ({
+      ...prev,
+      [diaryId]: !prev[diaryId],
+    }));
+  };
+
+  const handleToggleComments = (diaryId) => {
+    setShowAllComments((prev) => ({
       ...prev,
       [diaryId]: !prev[diaryId],
     }));
@@ -384,36 +410,63 @@ function Community() {
                         </div>
 
                         {/* Comments */}
-
                         <ul className="mt-4">
-                          {diaryComments[diary.id]?.map((comment) => {
-                            if (!userProfiles[comment.userId]) {
-                              fetchUserProfile(comment.userId);
-                            }
-                            const userProfile = userProfiles[comment.userId] || {};
-                            return (
-                              <li key={comment.id} className="mb-2 p-2 bg-antique-white rounded">
-                                <div className="flex items-center mb-1">
-                                  {userProfile.profile_pic ? (
-                                    <img
-                                      src={userProfile.profile_pic}
-                                      alt={`${userProfile.name} profile`}
-                                      className="w-6 h-6 rounded-full mr-2"
-                                    />
-                                  ) : (
-                                    <div className="w-6 h-6 rounded-full bg-light-beige mr-2"></div> //使用者頭貼預設
-                                  )}
-                                  <p className="text-sm lg:text-base  mr-2">
-                                    {userProfile.name || "Loading..."}
-                                  </p>
-                                  <p className="text-xs lg:text-sm text-gray-500">
-                                    {comment.createdAt?.toDate().toLocaleString()}
-                                  </p>
-                                </div>
-                                <p className="text-sm lg:text-base">{comment.content}</p>
-                              </li>
-                            );
-                          })}
+                          {diaryComments[diary.id]
+                            ?.slice(
+                              0,
+                              showAllComments[diary.id] ? diaryComments[diary.id].length : 2
+                            )
+                            .map((comment) => {
+                              if (!userProfiles[comment.userId]) {
+                                fetchUserProfile(comment.userId);
+                              }
+                              const userProfile = userProfiles[comment.userId] || {};
+                              return (
+                                <li key={comment.id} className="mb-2">
+                                  <div className="flex items-start mb-1">
+                                    {/* Profile Image */}
+                                    {userProfile.profile_pic ? (
+                                      <img
+                                        src={userProfile.profile_pic}
+                                        alt={`${userProfile.name} profile`}
+                                        className="w-8 h-8 rounded-full mr-2"
+                                      />
+                                    ) : (
+                                      <div className="w-8 h-8 rounded-full mr-2">
+                                        <FaCircleUser />
+                                      </div>
+                                    )}
+
+                                    {/* Comment Box */}
+                                    <div>
+                                      <div className="p-2 bg-antique-white rounded-lg">
+                                        <p className="text-sm lg:text-base mr-2">
+                                          {userProfile.name || "Loading..."}
+                                        </p>
+                                        <p className="text-sm lg:text-base">{comment.content}</p>
+                                      </div>
+
+                                      {/* Timestamp - Moved Below the Box */}
+                                      <p className="text-xs lg:text-sm text-gray-500 mt-1">
+                                        {comment.createdAt?.toDate().toLocaleString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </li>
+                              );
+                            })}
+
+                          {/* Show more/less comments button */}
+                          {diaryComments[diary.id]?.length > 2 && (
+                            <button
+                              onClick={() => handleToggleComments(diary.id)}
+                              className="text-dark-blue mt-2"
+                            >
+                              {showAllComments[diary.id]
+                                ? "收起留言"
+                                : `顯示所有 ${diaryComments[diary.id].length} 則留言`}
+                            </button>
+                          )}
                         </ul>
 
                         {/* Add Comment */}
