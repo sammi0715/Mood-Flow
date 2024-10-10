@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../../utills/firebase";
 import { TiThMenu } from "react-icons/ti";
 import moodIcons from "../../utills/moodIcons";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
+import { FaRegHeart, FaHeart, FaRegComment } from "react-icons/fa";
 import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
 import { IoMdCloseCircle } from "react-icons/io";
+import { FaCircleUser } from "react-icons/fa6";
 import Alert from "../../utills/alert";
 import {
   updateDiary,
@@ -14,6 +16,10 @@ import {
   simplifyTrack,
   handleImageUpload,
   handleRemoveImage,
+  listenToComments,
+  toggleLikeDiary,
+  fetchUserData,
+  addComment,
 } from "../../utills/firebase-data";
 import { SpotifyTracks } from "../../utills/spotifyTrack";
 import Sidebar from "../Sidebar";
@@ -33,6 +39,11 @@ function ViewDiaryEntry() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
+  const [likes, setLikes] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [showCommentInput, setShowCommentInput] = useState({});
+  const [userProfiles, setUserProfiles] = useState({});
   const {
     isPlaying,
     setIsPlaying,
@@ -78,6 +89,25 @@ function ViewDiaryEntry() {
       fetchDiary();
     }
   }, [diaryId, navigate]);
+
+  useEffect(() => {
+    const unsubscribeComments = listenToComments(diaryId, (updatedComments) => {
+      setComments(updatedComments);
+    });
+
+    const diaryRef = doc(db, "diaries", diaryId);
+    const unsubscribeLikes = onSnapshot(diaryRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const diaryData = snapshot.data();
+        setLikes(diaryData.likes || []);
+      }
+    });
+
+    return () => {
+      unsubscribeComments();
+      unsubscribeLikes();
+    };
+  }, [diaryId]);
 
   const handlePlayButton = async () => {
     if (!spotifyToken) {
@@ -170,6 +200,32 @@ function ViewDiaryEntry() {
     return <div className="p-8">Diary not found.</div>;
   }
 
+  const fetchUserProfile = async (userId) => {
+    if (!userProfiles[userId]) {
+      const userProfile = await fetchUserData(userId);
+      setUserProfiles((prev) => ({
+        ...prev,
+        [userId]: userProfile,
+      }));
+    }
+  };
+
+  const handleAddComment = async (diaryId) => {
+    if (!newComment.trim()) {
+      setAlertMessage("請輸入留言內容");
+      return;
+    }
+
+    try {
+      await addComment(diaryId, newComment);
+      setNewComment("");
+      setAlertMessage("留言已送出");
+    } catch (error) {
+      console.error("添加留言時發生錯誤:", error);
+      setAlertMessage("送出留言時發生錯誤，請稍後再試。");
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
@@ -202,13 +258,11 @@ function ViewDiaryEntry() {
         {isEditing ? (
           <div className="flex-grow max-w-4xl mx-auto  bg-light-beige bg-opacity-75 border-1 border border-gray-900 p-8 rounded-lg">
             <div className="mb-6">
-              {/* 顯示選擇的心情圖標 */}
               {updatedMood && (
                 <div className="mt-4 flex justify-center">
                   <img src={moodIcons[updatedMood]} alt={updatedMood} className="h-16 w-16" />
                 </div>
               )}
-              {/* 使用下拉選單來選擇心情並顯示對應的圖片 */}
               <div className="flex justify-center">
                 <select
                   value={updatedMood}
@@ -235,7 +289,6 @@ function ViewDiaryEntry() {
               />
             </div>
 
-            {/* 顯示目前的圖片並允許刪除 */}
             {updatedImages.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
                 {updatedImages.map((url, index) => (
@@ -328,7 +381,7 @@ function ViewDiaryEntry() {
               <img src={moodIcons[diary.mood]} alt={diary.mood} className="h-14 w-14 mr-2" />
               <span className="text-lg">{diary.mood}</span>
             </div>
-            <p className="text-gray-700 mb-6">{diary.content}</p>
+            <p className="text-gray-700 mb-6 text-base md:text-lg">{diary.content}</p>
             {diary.imageUrls && diary.imageUrls.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
                 {diary.imageUrls.map((url, index) => (
@@ -377,7 +430,6 @@ function ViewDiaryEntry() {
             </button>
           </div>
         )}
-        {/* 如果有 Alert 訊息，則顯示 CustomAlert */}
         {alertMessage && (
           <Alert
             message={alertMessage}
@@ -385,6 +437,82 @@ function ViewDiaryEntry() {
             onConfirm={alertConfirm}
           />
         )}
+        <div className="likes-comments-section mt-8">
+          <div className="likes mb-4 flex items-center">
+            <button onClick={() => toggleLikeDiary(diaryId, likes)} className="flex items-center">
+              {likes.includes(userId) ? (
+                <FaHeart className="text-red-600" />
+              ) : (
+                <FaRegHeart className="text-gray-600" />
+              )}
+              <span className="ml-2">{likes.length}</span>
+            </button>
+          </div>
+
+          <div className="comments-section">
+            <div className="comments-header flex items-center">
+              <FaRegComment className="text-gray-600" />
+              <h4 className="text-lg ml-2">留言</h4>
+            </div>
+            <ul className="mt-4">
+              {comments.map((comment) => {
+                if (!userProfiles[comment.userId]) {
+                  fetchUserProfile(comment.userId);
+                }
+                const userProfile = userProfiles[comment.userId] || {};
+                return (
+                  <li key={comment.id} className="mb-2">
+                    <div className="flex items-start mb-1">
+                      {userProfile.profile_pic ? (
+                        <img
+                          src={userProfile.profile_pic}
+                          alt={`${userProfile.name} profile`}
+                          className="w-8 h-8 rounded-full mr-2"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full mr-2">
+                          <FaCircleUser />
+                        </div>
+                      )}
+
+                      <div>
+                        <div className="p-2 bg-antique-white rounded-lg">
+                          <p className="text-sm lg:text-base mr-2">
+                            {userProfile.name || "Loading..."}
+                          </p>
+                          <p className="text-sm lg:text-base">{comment.content}</p>
+                        </div>
+
+                        <p className="text-xs lg:text-sm text-gray-500 mt-1">
+                          {comment.createdAt?.toDate().toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* 新增留言輸入框 */}
+          {showCommentInput && (
+            <div className="mt-2">
+              <input
+                type="text"
+                placeholder="輸入留言..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="border p-2 w-full"
+              />
+              <button
+                onClick={() => handleAddComment(diaryId)}
+                className="mt-2 p-1 bg-amber-500 text-white rounded text-xs"
+              >
+                送出
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
