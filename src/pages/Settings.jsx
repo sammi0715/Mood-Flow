@@ -3,6 +3,8 @@ import {
   fetchUserData,
   updateUserData,
   handleImageUpload as firebaseHandleImageUpload,
+  updateFriendName,
+  getFriendIds,
 } from "../utills/firebase-data";
 import Alert from "../utills/alert";
 import { useParams } from "react-router-dom";
@@ -18,10 +20,9 @@ const ProfileSettings = () => {
   const [newName, setNewName] = useState("");
   const [privacyStatus, setPrivacyStatus] = useState("public");
   const [uploadedImages, setUploadedImages] = useState([]);
-  const [previewImage, setPreviewImage] = useState(null);
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
-  // 取得使用者資料
+
   useEffect(() => {
     const getUserData = async () => {
       try {
@@ -58,6 +59,11 @@ const ProfileSettings = () => {
   }, [uploadedImages]);
 
   const handleUpdateProfile = async () => {
+    const usernamePattern = /^[a-zA-Z0-9]{4,15}$/;
+    if (!usernamePattern.test(newName)) {
+      setAlertMessage("使用者名稱必須是 4-15 個字元的英文字母或數字");
+      return;
+    }
     try {
       const updatedData = {
         name: newName,
@@ -67,6 +73,13 @@ const ProfileSettings = () => {
         updatedData.profile_pic = userData.profile_pic;
       }
       await updateUserData(userId, updatedData);
+
+      const friendIds = await getFriendIds(userId);
+
+      for (const friendId of friendIds) {
+        await updateFriendName(friendId, userId, newName);
+      }
+
       setAlertMessage("個人資料更新成功！");
     } catch (error) {
       console.error("更新個人資料失敗：", error);
