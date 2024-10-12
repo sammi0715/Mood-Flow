@@ -208,7 +208,10 @@ const MoodTrack = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p>沒有可用的心情數據</p>
+              <div className="flex flex-col items-center justify-center">
+                <p>沒有可用的心情數據 </p>
+                <img src={moodIcons["哭泣"]} alt="哭泣" className="w-16 h-16 mt-2" />
+              </div>
             )}
           </div>
           <p className="mt-4 text-xl text-center">Keep good mood!</p>
@@ -266,8 +269,13 @@ const MoodTrack = () => {
               </ScatterChart>
             </ResponsiveContainer>
           ) : (
-            <p>沒有可用的趨勢數據</p>
+            <div className="flex flex-col items-center justify-center">
+              <p>沒有可用的趨勢數據 </p>
+              <img src={moodIcons["焦慮"]} alt="焦慮" className="w-16 h-16 mt-2" />
+            </div>
           )}
+
+          <p className="mt-4 text-xl text-center">Go with the flow ～</p>
         </div>
         {/* 圖表說明進度條 */}
         <div className="mt-8 p-6 border border-gray-300 rounded-lg">
