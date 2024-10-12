@@ -8,6 +8,7 @@ import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
 import moodIcons from "../../utills/moodIcons";
 import Sidebar from "../Sidebar";
 import Alert from "../../utills/alert";
+
 import {
   format,
   addMonths,
@@ -47,16 +48,24 @@ function DiaryCalendar() {
   const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem("visited")) {
+      setIsFirstVisit(true);
+      localStorage.setItem("visited", "true");
+    }
+  }, []);
 
   useEffect(() => {
     const loadDiaries = async () => {
       try {
         const diaryData = await fetchDiaries(userId);
-        console.log("Fetched Diaries:", diaryData);
         setDiaries(diaryData);
       } catch (error) {
         console.error("Error loading diaries: ", error);
         setAlertMessage(`加載日記時出錯：${error.message}`);
+        navigate("/");
       }
     };
 
@@ -65,6 +74,7 @@ function DiaryCalendar() {
     } else {
       console.warn("User ID is undefined.");
       setAlertMessage("用戶ID未定義，無法加載日記。");
+      navigate("/");
     }
   }, [userId]);
 
@@ -72,9 +82,8 @@ function DiaryCalendar() {
     const today = new Date();
     const formattedDate = format(day, "yyyy-MM-dd");
 
-    // 禁止點擊未來日期
     if (day > today) {
-      setAlertMessage("時間還沒到喔😗～");
+      setAlertMessage("時間還沒到喔 😗 ～");
       return;
     }
 
@@ -92,6 +101,7 @@ function DiaryCalendar() {
     const endTheMonth = endOfMonth(currentDate);
     const startDate = startOfWeek(startOfTheMonth);
     const endDate = endOfWeek(endTheMonth);
+    const today = new Date();
     const days = [];
     let day = startDate;
 
@@ -99,19 +109,23 @@ function DiaryCalendar() {
       const currentDay = day;
 
       const diaryForDay = diaries.find((diary) => isSameDay(new Date(diary.date), currentDay));
+      const isToday = isSameDay(today, currentDay);
+
       days.push(
         <div
           key={currentDay.getTime()}
           onClick={() => handleDateClick(new Date(currentDay))}
-          className={`relative w-full flex justify-center items-center rounded-lg lg:rounded-xl h-16 lg:h-28 cursor-pointer transition duration-300 hover:shadow-lg bg-opacity-90 ${
+          className={`relative w-full flex justify-center items-center rounded-lg lg:rounded-xl h-16 lg:h-28 cursor-pointer transition duration-300 bg-opacity-90 hover:shadow-lg ho ${
             !isSameMonth(currentDay, currentDate) ? "bg-brown" : "bg-light-beige "
           }`}
         >
-          <div className="absolute top-2 left-2 lg:left-4 text-xs md:text-base xl:text-xl text-dark-brown">
+          <div
+            className={`absolute top-2 left-2 lg:left-4 text-xs md:text-base xl:text-xl text-dark-brown 
+            ${isToday ? "bg-dark-orange text-white rounded-full px-2 py-1" : ""}`}
+          >
             {format(currentDay, "d")}
           </div>
 
-          {/* 如果這天有日記，顯示相應的情緒圖片 */}
           {diaryForDay && diaryForDay.mood && (
             <div className="flex flex-col items-center mt-2 sm:mt-0">
               <img
@@ -144,8 +158,6 @@ function DiaryCalendar() {
       const absDeltaX = Math.abs(e.deltaX);
       const absDeltaY = Math.abs(e.deltaY);
 
-      console.log("deltaX:", e.deltaX, "deltaY:", e.deltaY);
-
       if (absDeltaX > 3 * absDeltaY && absDeltaX > 0.5) {
         if (e.deltaX < 0) {
           prevMonth();
@@ -164,90 +176,108 @@ function DiaryCalendar() {
   const monthInChinese = monthsInChinese[formattedMonth];
 
   return (
-    <div className="flex  min-h-screen">
-      {/* Sidebar */}
-      <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-
-      <div className="flex-grow flex-col p-4  bg-back">
-        <div className="flex items-center justify-between mb-4">
-          {/* 左側的 menu icon */}
-          <div className="flex-none">
-            <TiThMenu
-              className="h-6 w-6 lg:h-8 lg:w-8 cursor-pointer text-dark-blue hover:text-gray-800"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            />
-          </div>
-
-          {/* 中間的年份和月份 */}
-          <div className="flex items-center justify-center space-x-2">
+    <div className="relative">
+      {isFirstVisit && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-10/12 md:w-1/2 lg:w-1/2 text-center">
+            <h2 className="text-xl font-bold mb-4">歡迎來到Mood Flow！</h2>
+            <p className="mb-4">你可以點擊月曆上現在以及過去的任一天來新增你的日記 📒</p>
+            <p className="mb-4">如果你有Spotify帳戶，點擊右上角連結按鈕開始選歌吧！</p>
+            <p className="mb-4">點擊左上角選單發現更多功能！</p>
             <button
-              onClick={prevMonth}
-              className="mr-4 text-dark-blue hover:text-dark-blue transition duration-300"
+              className="px-4 py-2 bg-light-orange text-white rounded hover:bg-dark-orange"
+              onClick={() => setIsFirstVisit(false)}
             >
-              <FiChevronLeft className="h-6 w-6" />
-            </button>
-            <div className="w-36 lg:w-48 text-center ">
-              <h2 className="text-lg lg:text-2xl xl:text-3xl text-dark-blue">
-                {formattedMonth}
-                <br />
-                {monthInChinese} {year}
-              </h2>
-            </div>
-            <button
-              onClick={nextMonth}
-              className="text-dark-blue hover:text-dark-blue transition duration-300"
-            >
-              <FiChevronRight className="h-6 w-6" />
+              開始使用
             </button>
           </div>
-
-          {/* Spotify 按鈕 */}
-          <div className="flex-none">
-            {!spotifyToken ? (
-              <button
-                className="flex bg-gradient-to-tl from-[#33a9a0] to-[#c4e81d]  text-white text-sm lg:text-lg p-1 lg:px-4 lg:py-2 rounded-lg items-center"
-                onClick={handleSpotifyLogin}
-              >
-                連結 <FaSpotify className="ml-2 text-white w-4 h-4 xl:w-6 xl:h-6" />
-              </button>
-            ) : (
-              <button className="flex bg-gradient-to-r from-[#35ce75] to-[#e5f046] text-white px-2 py-2 rounded-lg items-center text-base lg:text-xl">
-                已連結
-                <FaSpotify className="ml-2 text-white xl:w-6 xl:h-6" />
-              </button>
-            )}
-          </div>
         </div>
-        <div className="grid grid-cols-7 gap-4 text-center">
-          {["週日", "週一", "週二", "週三", "週四", "週五", "週六"].map((day) => (
-            <div
-              key={day}
-              className={`text-sm lg:text-2xl ${
-                day === "週六" || day === "週日" ? "text-red-400" : "text-dark-blue"
-              }`}
-            >
-              {day}
-            </div>
-          ))}
-        </div>
-        {/* 日曆 */}
-        <div
-          className="grid grid-cols-7 gap-y-2 gap-x-2 md:gap-2 lg:gap-4 text-center mt-2"
-          onWheel={handleWheel}
-        >
-          {renderDays()}
-        </div>{" "}
-        <div className="flex justify-center items-center mt-4 mb-12">
-          <img src={pencil} className="w-3/4"></img>
-        </div>
-      </div>
-      {alertMessage && (
-        <Alert
-          message={alertMessage}
-          onClose={() => setAlertMessage(null)}
-          onConfirm={alertConfirm}
-        />
       )}
+      <div className="flex  min-h-screen">
+        {/* Sidebar */}
+        <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+
+        <div className="flex-grow flex-col p-4  bg-back">
+          <div className="flex items-center justify-between mb-4">
+            {/* 左側的 menu icon */}
+            <div className="flex-none">
+              <TiThMenu
+                className="h-6 w-6 lg:h-8 lg:w-8 cursor-pointer text-dark-blue hover:text-gray-800"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              />
+            </div>
+
+            {/* 中間的年份和月份 */}
+            <div className="flex items-center justify-center space-x-2">
+              <button
+                onClick={prevMonth}
+                className="mr-4 text-dark-blue hover:text-dark-blue transition duration-300"
+              >
+                <FiChevronLeft className="h-6 w-6" />
+              </button>
+              <div className="w-36 lg:w-48 text-center ">
+                <h2 className="text-lg lg:text-2xl xl:text-3xl text-dark-blue">
+                  {formattedMonth}
+                  <br />
+                  {monthInChinese} {year}
+                </h2>
+              </div>
+              <button
+                onClick={nextMonth}
+                className="text-dark-blue hover:text-dark-blue transition duration-300"
+              >
+                <FiChevronRight className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Spotify 按鈕 */}
+            <div className="flex-none">
+              {!spotifyToken ? (
+                <button
+                  className="flex bg-gradient-to-tl from-[#33a9a0] to-[#c4e81d]  text-white text-sm lg:text-lg p-1 lg:px-4 lg:py-2 rounded-lg items-center"
+                  onClick={handleSpotifyLogin}
+                >
+                  連結 <FaSpotify className="ml-2 text-white w-4 h-4 xl:w-6 xl:h-6" />
+                </button>
+              ) : (
+                <button className="flex bg-gradient-to-r from-[#35ce75] to-[#e5f046] text-white px-2 py-2 rounded-lg items-center text-base lg:text-xl">
+                  已連結
+                  <FaSpotify className="ml-2 text-white xl:w-6 xl:h-6" />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-7 gap-4 text-center">
+            {["週日", "週一", "週二", "週三", "週四", "週五", "週六"].map((day) => (
+              <div
+                key={day}
+                className={`text-sm lg:text-2xl ${
+                  day === "週六" || day === "週日" ? "text-red-400" : "text-dark-blue"
+                }`}
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+          {/* 日曆 */}
+          <div
+            className="grid grid-cols-7 gap-y-2 gap-x-2 md:gap-2 lg:gap-4 text-center mt-2"
+            onWheel={handleWheel}
+          >
+            {renderDays()}
+          </div>{" "}
+          <div className="flex justify-center items-center mt-4 mb-12">
+            <img src={pencil} className="w-3/4"></img>
+          </div>
+        </div>
+        {alertMessage && (
+          <Alert
+            message={alertMessage}
+            onClose={() => setAlertMessage(null)}
+            onConfirm={alertConfirm}
+          />
+        )}
+      </div>
     </div>
   );
 }
