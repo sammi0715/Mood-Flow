@@ -35,11 +35,19 @@ function NewDiaryEntry() {
   const [diaryContent, setDiaryContent] = useState("");
   const [uploadedImages, setUploadedImages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
+  const {
+    spotifyToken,
+    handleSpotifyLogin,
+    isPlaying,
+    currentTrack,
+    handlePlayPause,
+    handleTrackSelect,
+  } = useSpotifyPlayer();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
-  const handleTrackSelect = (track) => {
+
+  const handleSelectTrackForDiary = (track) => {
     if (track === null) {
       setSelectedTrack(null);
     } else {
@@ -79,7 +87,6 @@ function NewDiaryEntry() {
     }
 
     try {
-      const allowedViewers = await getFriendIds(user.uid);
       const diaryEntry = {
         date: selectedDate,
         mood: selectedMood,
@@ -87,7 +94,6 @@ function NewDiaryEntry() {
         userId: user.uid,
         track: selectedTrack || null,
         imageUrls: uploadedImages.length > 0 ? uploadedImages : null,
-        allowedViewers,
         createdAt: serverTimestamp(),
       };
 
@@ -117,6 +123,13 @@ function NewDiaryEntry() {
     }
   };
 
+  const handlePlayTrack = async (track) => {
+    try {
+      await handleTrackSelect(track.uri);
+    } catch (error) {
+      console.error("播放歌曲時發生錯誤", error);
+    }
+  };
   return (
     <div className="flex-1 pb-12">
       <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
@@ -154,7 +167,7 @@ function NewDiaryEntry() {
         </div>
 
         <textarea
-          className="w-full bg-gray-100 h-64 rounded-lg p-4 resize-none"
+          className="w-full bg-gray-100 h-64 rounded-lg p-4 resize-none  break-all overflow-wrap break-word"
           placeholder="輸入今天的日記..."
           value={diaryContent}
           onChange={handleDiaryChange}
@@ -202,7 +215,13 @@ function NewDiaryEntry() {
         <h3 className="text-lg mb-2">Music</h3>
 
         {spotifyToken ? (
-          <SpotifyTracks onSelectTrack={handleTrackSelect} />
+          <SpotifyTracks
+            onSelectTrackForDiary={handleSelectTrackForDiary}
+            onPlayTrack={handlePlayTrack}
+            currentTrack={currentTrack}
+            isPlaying={isPlaying}
+            onPlayPause={handlePlayPause}
+          />
         ) : (
           <button
             className="flex bg-gradient-to-tl from-[#33a9a0] to-[#c4e81d]  text-white text-sm lg:text-lg p-1 lg:px-4 lg:py-2 rounded-lg items-center"

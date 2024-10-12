@@ -36,76 +36,50 @@ export const SpotifyPlayerProvider = ({ children }) => {
   const [currentTrack, setCurrentTrack] = useState(null);
   const [spotifyToken, setSpotifyToken] = useState(() => localStorage.getItem("spotify_token"));
   const [alertMessage, setAlertMessage] = useState(null);
-
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
   const navigate = useNavigate();
+
   const initializePlayer = useCallback(() => {
-    if (player || !spotifyToken) return;
+    if (!spotifyToken) return;
 
     const newPlayer = new window.Spotify.Player({
-      name: "My Web Player",
-      getOAuthToken: (cb) => cb(spotifyToken),
+      name: "Mood Flow Web Player",
+      getOAuthToken: (cb) => {
+        cb(spotifyToken);
+      },
+      volume: 0.4,
     });
 
     newPlayer.addListener("ready", ({ device_id }) => {
       localStorage.setItem("spotify_device_id", device_id);
       setDeviceId(device_id);
-      console.log("Spotify Player is ready with Device ID", device_id);
+      setIsPlayerInitialized(true);
+      setIsPlayerReady(true);
     });
 
     newPlayer.addListener("not_ready", ({ device_id }) => {
-      console.warn("Spotify Player is not ready with Device ID", device_id);
+      console.log("Device ID has gone offline", device_id);
     });
+
     newPlayer.addListener("player_state_changed", (state) => {
       if (!state) {
+        setIsPlaying(false);
+        setCurrentTrack(null);
         return;
       }
       setIsPlaying(!state.paused);
       setCurrentTrack(state.track_window.current_track);
     });
 
-    newPlayer.connect();
-    setPlayer(newPlayer);
-  }, [spotifyToken, player]);
-
-  useEffect(() => {
-    if (window.Spotify) {
-      initializePlayer();
-    } else {
-      window.onSpotifyWebPlaybackSDKReady = () => {
-        console.log("Spotify Web Playback SDK is ready.");
-        initializePlayer();
-      };
-
-      const script = document.createElement("script");
-      script.src = "https://sdk.scdn.co/spotify-player.js";
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, [initializePlayer]);
-
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = localStorage.getItem("spotify_token");
-      if (token) {
-        try {
-          const response = await fetch("https://api.spotify.com/v1/me", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (response.status === 401) {
-            localStorage.removeItem("spotify_token");
-            setSpotifyToken(null);
-          }
-        } catch (error) {
-          console.error("Error checking token validity:", error);
-          localStorage.removeItem("spotify_token");
-          setSpotifyToken(null);
-        }
+    newPlayer.connect().then((success) => {
+      if (success) {
+        console.log("The Web Playback SDK successfully connected to Spotify!");
       }
-    };
-    checkToken();
-  }, []);
+    });
+
+    setPlayer(newPlayer);
+  }, [spotifyToken]);
 
   const handleSpotifyLogin = useCallback(async () => {
     localStorage.removeItem("spotify_token");
@@ -143,52 +117,71 @@ export const SpotifyPlayerProvider = ({ children }) => {
     window.location.href = authUrl.toString();
   }, []);
 
-  const exchangeToken = useCallback(async (authorizationCode) => {
-    const codeVerifier = localStorage.getItem("code_verifier");
-    if (!codeVerifier) {
-      console.error("code_verifier is missing from localStorage.");
-      return;
-    }
+  const exchangeToken = useCallback(
+    async (authorizationCode) => {
+      const codeVerifier = localStorage.getItem("code_verifier");
+      if (!codeVerifier) {
+        console.error("code_verifier is missing from localStorage.");
+        return;
+      }
 
-    const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-    const redirectUri = "https://mood-flow.web.app/spotify-callback";
+      const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+      const redirectUri = "https://mood-flow.web.app/spotify-callback";
 
-    const params = new URLSearchParams({
-      client_id: clientId,
-      grant_type: "authorization_code",
-      code: authorizationCode,
-      redirect_uri: redirectUri,
-      code_verifier: codeVerifier,
-    });
-
-    try {
-      const response = await fetch("https://accounts.spotify.com/api/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: params.toString(),
+      const params = new URLSearchParams({
+        client_id: clientId,
+        grant_type: "authorization_code",
+        code: authorizationCode,
+        redirect_uri: redirectUri,
+        code_verifier: codeVerifier,
       });
 
-      const data = await response.json();
+      try {
+        const response = await fetch("https://accounts.spotify.com/api/token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params.toString(),
+        });
 
-      if (data.access_token) {
-        localStorage.setItem("spotify_token", data.access_token);
-        setSpotifyToken(data.access_token);
+        const data = await response.json();
 
-        if (data.refresh_token) {
-          localStorage.setItem("spotify_refresh_token", data.refresh_token);
+        if (data.access_token) {
+          localStorage.setItem("spotify_token", data.access_token);
+          setSpotifyToken(data.access_token);
+
+          if (data.refresh_token) {
+            localStorage.setItem("spotify_refresh_token", data.refresh_token);
+          }
+
+          localStorage.removeItem("code_verifier");
+          window.history.replaceState({}, document.title, window.location.pathname);
+          initializePlayer();
+        } else {
+          console.error("Failed to obtain access token:", data);
         }
-
-        localStorage.removeItem("code_verifier");
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else {
-        console.error("Failed to obtain access token:", data);
+      } catch (error) {
+        console.error("Error exchanging token:", error);
       }
-    } catch (error) {
-      console.error("Error exchanging token:", error);
+    },
+    [initializePlayer]
+  );
+  useEffect(() => {
+    if (window.Spotify) {
+      initializePlayer();
+    } else {
+      window.onSpotifyWebPlaybackSDKReady = initializePlayer;
+      const script = document.createElement("script");
+      script.src = "https://sdk.scdn.co/spotify-player.js";
+      script.async = true;
+      document.body.appendChild(script);
     }
-  }, []);
+
+    return () => {
+      window.onSpotifyWebPlaybackSDKReady = null;
+    };
+  }, [initializePlayer, spotifyToken, exchangeToken]);
 
   const refreshToken = useCallback(async () => {
     const refresh_token = localStorage.getItem("spotify_refresh_token");
@@ -268,87 +261,53 @@ export const SpotifyPlayerProvider = ({ children }) => {
   );
 
   const handlePlayPause = useCallback(async () => {
-    if (!player) {
-      console.error("播放器未初始化");
+    if (!player || !isPlayerReady) {
+      console.error("播放器未初始化或未就緒");
+      setAlertMessage("播放器未就緒，請稍後再試。");
       return;
     }
 
     try {
-      if (isPlaying) {
-        await player.pause();
-        setIsPlaying(false);
-      } else {
-        await player.resume();
-        setIsPlaying(true);
-      }
+      await player.togglePlay();
     } catch (error) {
       console.error("播放/暫停音樂時發生錯誤：", error);
+      setAlertMessage("播放控制出錯，請稍後再試。");
     }
-  }, [player, isPlaying, deviceId]);
-
-  const transferPlaybackToDevice = useCallback(
-    async (deviceIdToTransfer) => {
-      if (!deviceIdToTransfer) {
-        console.error("Invalid device ID for transfer.");
-        return;
-      }
-
-      try {
-        const response = await fetchWithTokenCheck("https://api.spotify.com/v1/me/player", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            device_ids: [deviceIdToTransfer],
-            play: false,
-          }),
-        });
-
-        if (response.status !== 204) {
-          console.error("Failed to transfer playback to the device", response.statusText);
-        } else {
-          console.log("Playback transferred to the device:", deviceIdToTransfer);
-        }
-      } catch (error) {
-        console.error("Error transferring playback to device:", error);
-      }
-    },
-    [fetchWithTokenCheck]
-  );
+  }, [player, isPlayerReady]);
 
   const handleTrackSelect = useCallback(
     async (trackUri) => {
-      if (!player || !deviceId) {
-        console.error("播放器未初始化或無效的 deviceId");
+      if (!isPlayerInitialized || !isPlayerReady || !deviceId) {
+        console.error("播放器未初始化、未就緒或無效的 deviceId", {
+          isPlayerInitialized,
+          isPlayerReady,
+          deviceId,
+        });
+        setAlertMessage("播放器未就緒，請稍後再試。");
         return;
       }
 
       try {
-        await transferPlaybackToDevice(deviceId);
+        const response = await fetchWithTokenCheck(
+          `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+          {
+            method: "PUT",
+            body: JSON.stringify({ uris: [trackUri] }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-        const response = await fetchWithTokenCheck(`https://api.spotify.com/v1/me/player/play`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            uris: [trackUri],
-            device_id: deviceId,
-          }),
-        });
-
-        if (response.status === 204) {
-          setIsPlaying(true);
-          setCurrentTrack({ uri: trackUri });
-        } else {
-          console.error("無法播放歌曲", response.statusText);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
       } catch (error) {
         console.error("播放歌曲時發生錯誤", error);
+        setAlertMessage("播放歌曲時發生錯誤，請稍後再試。");
       }
     },
-    [player, deviceId, transferPlaybackToDevice, fetchWithTokenCheck]
+    [isPlayerInitialized, isPlayerReady, deviceId, fetchWithTokenCheck]
   );
 
   const contextValue = {

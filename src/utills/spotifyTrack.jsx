@@ -3,7 +3,13 @@ import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import { useSpotifyPlayer } from "./SpotifyPlayerContext";
 import { LuPlusCircle, LuCheckCircle } from "react-icons/lu";
 import Alert from "./alert";
-export const SpotifyTracks = ({ onSelectTrack }) => {
+export const SpotifyTracks = ({
+  onSelectTrackForDiary,
+  onPlayTrack,
+  currentTrack,
+  isPlaying,
+  onPlayPause,
+}) => {
   const [tracks, setTracks] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -11,18 +17,7 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
   const [selectedTracks, setSelectedTracks] = useState({});
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
-  const {
-    player,
-    handleTrackSelect,
-    fetchWithTokenCheck,
-    isPlaying,
-    setIsPlaying,
-    currentTrack,
-    setCurrentTrack,
-    spotifyToken,
-    deviceId,
-    initializePlayer,
-  } = useSpotifyPlayer();
+  const { fetchWithTokenCheck } = useSpotifyPlayer();
 
   useEffect(() => {
     const fetchTopTracks = async () => {
@@ -76,39 +71,15 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
       [track.id]: true,
     });
     console.log(`已選取歌曲: ${track.name}`);
-    onSelectTrack(track);
-    console.log(track);
+    onSelectTrackForDiary(track);
   };
 
-  const handlePlayPause = async (track) => {
-    if (!spotifyToken) {
-      setAlertMessage("請先登入 Spotify。");
-      return;
-    }
-
-    if (!player) {
-      initializePlayer();
-    }
-
-    await waitForSpotifyPlayerReady();
-
-    if (currentTrack?.id === track.id && isPlaying) {
-      await player.pause();
+  const handlePlayTrack = async (track) => {
+    if (currentTrack?.id === track.id) {
+      onPlayPause();
     } else {
-      await handleTrackSelect(track.uri);
+      await onPlayTrack(track);
     }
-  };
-  const waitForSpotifyPlayerReady = () => {
-    return new Promise((resolve) => {
-      const checkPlayer = () => {
-        if (player && deviceId) {
-          resolve();
-        } else {
-          setTimeout(checkPlayer, 100);
-        }
-      };
-      checkPlayer();
-    });
   };
 
   if (isLoading) {
@@ -150,7 +121,7 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
                 <p className="text-sm lg:text-xl">{track.name}</p>
                 <p className="text-sm text-gray-400">{track.artists[0].name}</p>
               </div>
-              <button onClick={() => handlePlayPause(track)}>
+              <button onClick={() => handlePlayTrack(track)}>
                 {currentTrack?.id === track.id && isPlaying ? (
                   <IoPauseCircle className="text-green-500 ml-2 w-8 h-8 lg:w-10 lg:h-10" />
                 ) : (
@@ -189,7 +160,7 @@ export const SpotifyTracks = ({ onSelectTrack }) => {
                 <p className="text-sm lg:text-xl">{track.name}</p>
                 <p className="text-xs text-gray-400">{track.artists[0].name}</p>
               </div>
-              <button onClick={() => handlePlayPause(track)}>
+              <button onClick={() => handlePlayTrack(track)}>
                 {currentTrack?.id === track.id && isPlaying ? (
                   <IoPauseCircle className="text-green-500 w-8 h-8 lg:w-10 lg:h-10" />
                 ) : (
