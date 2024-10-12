@@ -5,11 +5,12 @@ import { db } from "../../utills/firebase";
 import { TiThMenu } from "react-icons/ti";
 import moodIcons from "../../utills/moodIcons";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
-import { FaRegHeart, FaHeart, FaRegComment } from "react-icons/fa";
+import { FaRegComment } from "react-icons/fa";
 import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
 import { IoMdCloseCircle } from "react-icons/io";
 import { FaCircleUser } from "react-icons/fa6";
 import Alert from "../../utills/alert";
+import LikeTooltip from "../../utills/LikeTooltip";
 import {
   updateDiary,
   deleteDiary,
@@ -46,7 +47,7 @@ function ViewDiaryEntry() {
   const [userProfiles, setUserProfiles] = useState({});
   const {
     isPlaying,
-    setIsPlaying,
+
     currentTrack,
     handlePlayPause,
     handleTrackSelect,
@@ -129,6 +130,15 @@ function ViewDiaryEntry() {
       }
     }
   };
+
+  const handlePlayTrack = async (track) => {
+    try {
+      await handleTrackSelect(track.uri);
+    } catch (error) {
+      console.error("播放歌曲時發生錯誤", error);
+    }
+  };
+
   const waitForSpotifyPlayerReady = () => {
     return new Promise((resolve) => {
       const checkPlayer = () => {
@@ -192,13 +202,13 @@ function ViewDiaryEntry() {
     }
   };
 
-  if (loading) {
-    return <div className="p-8">Loading...</div>;
-  }
-
-  if (!diary) {
-    return <div className="p-8">Diary not found.</div>;
-  }
+  const handleImageUploadWrapper = async (event) => {
+    try {
+      await handleImageUpload(event, uploadedImages, setUploadedImages);
+    } catch (error) {
+      setAlertMessage(error.message);
+    }
+  };
 
   const fetchUserProfile = async (userId) => {
     if (!userProfiles[userId]) {
@@ -225,6 +235,14 @@ function ViewDiaryEntry() {
       setAlertMessage("送出留言時發生錯誤，請稍後再試。");
     }
   };
+
+  if (loading) {
+    return <div className="p-8">Loading...</div>;
+  }
+
+  if (!diary) {
+    return <div className="p-8">Diary not found.</div>;
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -283,7 +301,7 @@ function ViewDiaryEntry() {
               <textarea
                 value={updatedContent}
                 onChange={(e) => setUpdatedContent(e.target.value)}
-                className="border p-2 w-full"
+                className="border p-2 w-full break-all resize-none"
                 rows="5"
                 placeholder="編輯內容"
               />
@@ -309,7 +327,6 @@ function ViewDiaryEntry() {
               </div>
             )}
 
-            {/* 上傳新圖片 */}
             <div className="relative w-full h-auto rounded-lg mb-6">
               <div className="flex items-center justify-start space-x-4">
                 <input
@@ -317,7 +334,7 @@ function ViewDiaryEntry() {
                   id="file-upload"
                   className="hidden"
                   accept="image/jpg,image/jpeg,image/png,image/gif"
-                  onChange={(e) => handleImageUpload(e, uploadedImages, setUploadedImages)}
+                  onChange={handleImageUploadWrapper}
                   multiple
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
@@ -368,10 +385,14 @@ function ViewDiaryEntry() {
               </div>
             ) : (
               <SpotifyTracks
-                onSelectTrack={(track) => {
+                onSelectTrackForDiary={(track) => {
                   const simplifiedTrack = simplifyTrack(track);
                   setUpdatedTrack(simplifiedTrack);
                 }}
+                onPlayTrack={handlePlayTrack}
+                currentTrack={currentTrack}
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
               />
             )}
           </div>
@@ -381,7 +402,9 @@ function ViewDiaryEntry() {
               <img src={moodIcons[diary.mood]} alt={diary.mood} className="h-14 w-14 mr-2" />
               <span className="text-lg">{diary.mood}</span>
             </div>
-            <p className="text-gray-700 mb-6 text-base md:text-lg">{diary.content}</p>
+            <p className="text-gray-700 mb-6 text-base md:text-lg break-words whitespace-pre-wrap">
+              {diary.content}
+            </p>
             {diary.imageUrls && diary.imageUrls.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
                 {diary.imageUrls.map((url, index) => (
@@ -437,16 +460,14 @@ function ViewDiaryEntry() {
             onConfirm={alertConfirm}
           />
         )}
-        <div className="likes-comments-section mt-8">
+        <div className="likes-comments-section mt-8 max-w-5xl mx-auto">
           <div className="likes mb-4 flex items-center">
-            <button onClick={() => toggleLikeDiary(diaryId, likes)} className="flex items-center">
-              {likes.includes(userId) ? (
-                <FaHeart className="text-red-600" />
-              ) : (
-                <FaRegHeart className="text-gray-600" />
-              )}
-              <span className="ml-2">{likes.length}</span>
-            </button>
+            <LikeTooltip
+              diaryId={diaryId}
+              likes={likes}
+              userId={userId}
+              toggleLike={toggleLikeDiary}
+            />
           </div>
 
           <div className="comments-section">
