@@ -14,19 +14,21 @@ import {
   deleteFriend,
 } from "../utills/firebase-data";
 import moodIcons from "../utills/moodIcons";
-import { FaRegHeart, FaHeart, FaRegComment, FaSearch } from "react-icons/fa";
+import { auth } from "../utills/firebase";
+import Sidebar from "../pages/Sidebar";
+import Alert from "./../utills/alert";
+import Confirm from "./../utills/confirm";
+import LikeTooltip from "../utills/LikeTooltip";
+import { FaRegComment, FaSearch } from "react-icons/fa";
 import { IoIosClose, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { IoCloseCircle } from "react-icons/io5";
 import { FaCircleUser } from "react-icons/fa6";
-import { auth } from "../utills/firebase";
 import { RiUser5Fill } from "react-icons/ri";
-import Sidebar from "../pages/Sidebar";
 import { TiThMenu } from "react-icons/ti";
-import Alert from "./../utills/alert";
-import Confirm from "./../utills/confirm";
+
 function Community() {
   const [friends, setFriends] = useState([]);
-  const [isFriendsListOpen, setIsFriendsListOpen] = useState(true);
+  const [isFriendsListOpen, setIsFriendsListOpen] = useState(false);
   const [friendRequests, setFriendRequests] = useState([]);
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [selectedFriendDiaries, setSelectedFriendDiaries] = useState([]);
@@ -50,14 +52,12 @@ function Community() {
   useEffect(() => {
     if (userId) {
       const unsubscribe = listenToFriends(userId, (updatedFriends) => {
-        console.log("Updated friends list: ", updatedFriends);
         setFriends(updatedFriends);
 
-        // 檢查選中的好友是否還在好友列表中
         if (selectedFriend) {
           const isStillFriend = updatedFriends.some((friend) => friend.id === selectedFriend.id);
           if (!isStillFriend) {
-            setSelectedFriend(null); // 如果已不再是好友，清除選取的好友
+            setSelectedFriend(null);
             setAlertMessage("你已被移除好友，無法繼續查看內容");
           }
         }
@@ -67,7 +67,6 @@ function Community() {
     }
   }, [userId, selectedFriend]);
 
-  // 設置實時監聽好友請求
   useEffect(() => {
     if (userId) {
       const unsubscribe = listenToFriendRequests(userId, setFriendRequests);
@@ -75,7 +74,6 @@ function Community() {
     }
   }, [userId]);
 
-  // 獲取選定好友的日記
   useEffect(() => {
     if (selectedFriend && userId) {
       const fetchSelectedFriendDiaries = async () => {
@@ -384,22 +382,18 @@ function Community() {
                           />
                           <p>{diary.mood}</p>
                         </div>
-                        <p className="text-sm lg:text-base">{diary.content}</p>
+                        <p className="text-sm lg:text-base break-words whitespace-pre-wrap">
+                          {diary.content}
+                        </p>
 
                         <p className="text-xs lg:text-sm text-right text-gray-500"> {diary.date}</p>
                         <div className="flex items-center space-x-4">
-                          {" "}
-                          <button
-                            onClick={() => handleToggleLike(diary.id)}
-                            className="text-red-600 rounded flex items-center"
-                          >
-                            {likeStatuses[diary.id]?.includes(auth.currentUser.uid) ? (
-                              <FaHeart />
-                            ) : (
-                              <FaRegHeart />
-                            )}
-                            <span className="ml-2">{likeStatuses[diary.id]?.length || 0}</span>{" "}
-                          </button>
+                          <LikeTooltip
+                            diaryId={diary.id}
+                            likes={likeStatuses[diary.id] || []}
+                            userId={auth.currentUser?.uid}
+                            toggleLike={handleToggleLike}
+                          />
                           <button
                             className="text-black flex items-center"
                             onClick={() => handleToggleCommentInput(diary.id)}
@@ -409,7 +403,6 @@ function Community() {
                           </button>
                         </div>
 
-                        {/* Comments */}
                         <ul className="mt-4">
                           {diaryComments[diary.id]
                             ?.slice(
@@ -437,7 +430,6 @@ function Community() {
                                       </div>
                                     )}
 
-                                    {/* Comment Box */}
                                     <div>
                                       <div className="p-2 bg-antique-white rounded-lg">
                                         <p className="text-sm lg:text-base mr-2">
@@ -446,7 +438,6 @@ function Community() {
                                         <p className="text-sm lg:text-base">{comment.content}</p>
                                       </div>
 
-                                      {/* Timestamp - Moved Below the Box */}
                                       <p className="text-xs lg:text-sm text-gray-500 mt-1">
                                         {comment.createdAt?.toDate().toLocaleString()}
                                       </p>
@@ -456,7 +447,6 @@ function Community() {
                               );
                             })}
 
-                          {/* Show more/less comments button */}
                           {diaryComments[diary.id]?.length > 2 && (
                             <button
                               onClick={() => handleToggleComments(diary.id)}
@@ -469,7 +459,6 @@ function Community() {
                           )}
                         </ul>
 
-                        {/* Add Comment */}
                         {showCommentInput[diary.id] && (
                           <div className="mt-2">
                             <input
@@ -499,7 +488,7 @@ function Community() {
                 className="mt-4
               "
               >
-                請選擇一位好友以查看他們的日記動態！
+                點擊右側選單選擇一位好友以查看他們的日記動態！
               </p>
             )}
             {/* 錯誤訊息顯示 */}
