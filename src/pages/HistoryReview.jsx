@@ -123,15 +123,15 @@ function HistoryReview() {
 
     switch (e.target.value) {
       case "lastMonth":
-        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1); // 上個月的第一天
-        endDate = new Date(today.getFullYear(), today.getMonth(), 0); // 上個月的最後一天
+        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        endDate = new Date(today.getFullYear(), today.getMonth(), 0);
         break;
       case "lastThreeMonths":
-        startDate = subMonths(today, 3); // 前三個月的開始日期
+        startDate = subMonths(today, 3);
         break;
       case "lastYear":
-        startDate = new Date(today.getFullYear() - 1, 0, 1); // 去年的第一天
-        endDate = new Date(today.getFullYear() - 1, 11, 31); // 去年的最後一天
+        startDate = new Date(today.getFullYear() - 1, 0, 1);
+        endDate = new Date(today.getFullYear() - 1, 11, 31);
         break;
       default:
         return;
@@ -177,6 +177,7 @@ function HistoryReview() {
                 type="date"
                 value={startDate ? format(new Date(startDate), "yyyy-MM-dd") : ""}
                 onChange={(e) => setStartDate(e.target.value)}
+                max={format(new Date(), "yyyy-MM-dd")}
                 className="border p-2 mr-2 rounded-lg"
               />
 
@@ -184,6 +185,7 @@ function HistoryReview() {
                 type="date"
                 value={endDate ? format(new Date(endDate), "yyyy-MM-dd") : ""}
                 onChange={(e) => setEndDate(e.target.value)}
+                max={format(new Date(), "yyyy-MM-dd")}
                 className="border p-2 rounded-lg"
               />
             </div>
