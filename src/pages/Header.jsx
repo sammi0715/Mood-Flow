@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useReducer, useEffect, useRef } from "react";
 import logo from "../assets/images/logo-3.png";
 import { FaSearch } from "react-icons/fa";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { auth } from "../utills/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { RiNotification4Fill } from "react-icons/ri";
@@ -11,56 +11,98 @@ import {
   listenToFriends,
   listenToFriendRequests,
   markRequestAsRead,
+  listenToNotifications,
 } from "../utills/firebase-data";
-import Alert from "../utills/alert";
+import Alert from "../components/alert";
+
+const initialState = {
+  user: null,
+  searchQuery: "",
+  searchResults: [],
+  currentUserId: null,
+  friendRequests: [],
+  notifications: [],
+  friendRequestsSent: [],
+  friends: [],
+  isSearchOpen: false,
+  showNotifications: false,
+  hasSearched: false,
+  alertMessage: null,
+  alertConfirm: null,
+};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "SET_USER":
+      return { ...state, user: action.payload, currentUserId: action.payload?.uid };
+    case "SET_SEARCH_QUERY":
+      return { ...state, searchQuery: action.payload };
+    case "SET_HAS_SEARCHED":
+      return { ...state, hasSearched: action.payload };
+    case "SET_SEARCH_RESULTS":
+      return { ...state, searchResults: action.payload };
+    case "SET_FRIEND_REQUESTS":
+      return { ...state, friendRequests: action.payload };
+    case "SET_NOTIFICATIONS":
+      return { ...state, notifications: action.payload };
+    case "SET_FRIENDS":
+      return { ...state, friends: action.payload };
+    case "SET_ALERT_MESSAGE":
+      return { ...state, alertMessage: action.payload };
+    case "TOGGLE_SEARCH":
+      return {
+        ...state,
+        isSearchOpen: !state.isSearchOpen,
+        showNotifications: false,
+        searchQuery: "",
+        searchResults: [],
+      };
+    case "TOGGLE_NOTIFICATIONS":
+      return {
+        ...state,
+        showNotifications: action.payload !== undefined ? action.payload : !state.showNotifications,
+        isSearchOpen: false,
+      };
+    case "RESET_SEARCH":
+      return { ...state, searchQuery: "", searchResults: [], hasSearched: false };
+    case "CLEAR_ALERT":
+      return { ...state, alertMessage: null };
+    default:
+      return state;
+  }
+};
 
 function Header() {
+  const { userId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState(null);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null);
-  const [friendRequests, setFriendRequests] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [friendRequestsSent, setFriendRequestsSent] = useState([]);
-  const [friends, setFriends] = useState([]);
-  const [alertMessage, setAlertMessage] = useState(null);
-  const [alertConfirm, setAlertConfirm] = useState(null);
+  const inputRef = useRef(null);
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        setUser(currentUser);
-        setCurrentUserId(currentUser.uid);
+        dispatch({ type: "SET_USER", payload: currentUser });
 
-        // 監聽好友請求
-        const unsubscribeFriendRequests = listenToFriendRequests(currentUser.uid, (requests) => {
-          setFriendRequests(requests);
-
-          const sentRequests = requests
-            .filter((request) => request.status === "pending")
-            .map((request) => request.userId);
-          setFriendRequestsSent(sentRequests);
+        const unsubscribeNotifications = listenToNotifications(currentUser.uid, (notif) => {
+          dispatch({ type: "SET_NOTIFICATIONS", payload: notif });
         });
 
-        // 監聽好友列表
+        const unsubscribeFriendRequests = listenToFriendRequests(currentUser.uid, (requests) => {
+          dispatch({ type: "SET_FRIEND_REQUESTS", payload: requests });
+        });
+
         const unsubscribeFriends = listenToFriends(currentUser.uid, (friendsList) => {
-          setFriends(friendsList);
+          dispatch({ type: "SET_FRIENDS", payload: friendsList });
         });
 
         return () => {
+          unsubscribeNotifications();
           unsubscribeFriendRequests();
           unsubscribeFriends();
         };
       } else {
-        setUser(null);
-        setCurrentUserId(null);
-        setFriends([]);
-        setFriendRequests([]);
-        setFriendRequestsSent([]);
+        dispatch({ type: "SET_USER", payload: null });
       }
     });
 
@@ -68,19 +110,12 @@ function Header() {
   }, []);
 
   const handleLogoClick = () => {
-    if (user) {
-      navigate(`/diary-calendar/${user.uid}`);
-    } else {
-      navigate("/");
-    }
+    state.user ? navigate(`/diary-calendar/${state.user.uid}`) : navigate("/");
   };
 
   const closeAll = () => {
-    setIsSearchOpen(false);
-    setShowNotifications(false);
-    setSearchQuery("");
-    setSearchResults([]);
-    setHasSearched(false);
+    dispatch({ type: "RESET_SEARCH" });
+    dispatch({ type: "TOGGLE_NOTIFICATIONS", payload: false });
   };
 
   useEffect(() => {
@@ -90,7 +125,7 @@ function Header() {
       }
     };
 
-    if (isSearchOpen || showNotifications) {
+    if (state.isSearchOpen || state.showNotifications) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -99,76 +134,79 @@ function Header() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isSearchOpen, showNotifications]);
+  }, [state.isSearchOpen, state.showNotifications]);
 
-  // 切換搜尋框顯示與隱藏
+  useEffect(() => {
+    if (state.isSearchOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [state.isSearchOpen]);
+
   const toggleSearch = () => {
-    setIsSearchOpen((prev) => {
-      if (prev) return false;
-      setShowNotifications(false);
-      return true;
-    });
-  };
-
-  // 搜尋使用者
-  const handleSearch = async () => {
-    if (searchQuery.trim() === "") return;
-    try {
-      const results = await searchUserByName(searchQuery);
-      setSearchResults(results);
-      setHasSearched(true);
-    } catch (error) {
-      console.error("搜尋使用者失敗：", error);
-      setAlertMessage("搜尋使用者失敗，請稍後再試。");
-    }
-  };
-
-  // 發送好友邀請
-  const handleSendFriendRequest = async (targetUser) => {
-    if (!user) {
-      setAlertMessage("請先登入以發送好友邀請");
-      return;
-    }
-
-    try {
-      await sendFriendRequest(user.uid, targetUser);
-      setFriendRequestsSent((prev) => [...prev, targetUser.id]);
-      setAlertMessage(`已向 ${targetUser.name} 發送好友邀請`);
-      // 自動關閉 Alert
-      setTimeout(() => {
-        setAlertMessage(null);
-      }, 2000);
-    } catch (error) {
-      console.error("發送好友邀請失敗：", error);
-      setAlertMessage("發送好友邀請失敗，請稍後再試。");
-    }
+    dispatch({ type: "TOGGLE_SEARCH" });
   };
 
   const toggleNotifications = () => {
-    setShowNotifications((prev) => {
-      if (prev) return false;
-      setIsSearchOpen(false);
-      return true;
-    });
+    dispatch({ type: "TOGGLE_NOTIFICATIONS" });
   };
 
-  const handleNotificationClick = async (requestId) => {
+  const handleNotificationClick = async (notification) => {
     try {
-      await markRequestAsRead(currentUserId, requestId);
-      setFriendRequests((prevRequests) =>
-        prevRequests.map((request) =>
-          request.id === requestId ? { ...request, isRead: true } : request
-        )
-      );
+      if (notification.type === "comment") {
+        navigate(`/view-diary/${notification.diaryId}`);
+      } else if (notification.type === "reply") {
+        navigate(`/community/${notification.toUserId}`);
+      } else if (notification.type === "friendRequest") {
+        navigate(`/community/${notification.toUserId}`);
+      }
+
+      await markRequestAsRead(notification.id);
+
+      dispatch({
+        type: "SET_NOTIFICATIONS",
+        payload: state.notifications.map((notif) =>
+          notif.id === notification.id ? { ...notif, isRead: true } : notif
+        ),
+      });
     } catch (error) {
       console.error("標記通知為已讀時發生錯誤:", error);
     }
   };
 
-  // 判斷是否已為好友
-  const isFriend = (userId) => {
-    return friends.some((friend) => friend.id === userId);
+  const handleSearch = async () => {
+    if (state.searchQuery.trim() === "") return;
+    try {
+      const results = await searchUserByName(state.searchQuery);
+      dispatch({ type: "SET_SEARCH_RESULTS", payload: results });
+      dispatch({ type: "SET_HAS_SEARCHED", payload: true });
+    } catch (error) {
+      console.error("搜尋使用者失敗：", error);
+      dispatch({ type: "SET_ALERT_MESSAGE", payload: "搜尋使用者失敗，請稍後再試。" });
+    }
   };
+
+  const handleSendFriendRequest = async (targetUser) => {
+    if (!state.user) {
+      dispatch({ type: "SET_ALERT_MESSAGE", payload: "請先登入以發送好友邀請" });
+      return;
+    }
+
+    try {
+      await sendFriendRequest(state.user.uid, targetUser);
+      dispatch({
+        type: "SET_ALERT_MESSAGE",
+        payload: `已向 ${targetUser.name} 發送好友邀請`,
+      });
+      setTimeout(() => {
+        dispatch({ type: "CLEAR_ALERT" });
+      }, 2000);
+    } catch (error) {
+      console.error("發送好友邀請失敗：", error);
+      dispatch({ type: "SET_ALERT_MESSAGE", payload: "發送好友邀請失敗，請稍後再試。" });
+    }
+  };
+
+  const isFriend = (userId) => state.friends.some((friend) => friend.id === userId);
 
   const shouldHideIcons = location.pathname === "/";
 
@@ -185,54 +223,61 @@ function Header() {
       <div className="relative">
         {!shouldHideIcons && (
           <>
-            <button className="text-dark-blue mr-4" onClick={toggleSearch}>
+            <button
+              className="text-dark-blue mr-4"
+              onClick={() => dispatch({ type: "TOGGLE_SEARCH" })}
+            >
               <FaSearch className="h-6 w-6 lg:h-8 lg:w-8" />
             </button>
-            <button className="text-dark-blue relative" onClick={toggleNotifications}>
+            <button
+              className="text-dark-blue relative"
+              onClick={() => dispatch({ type: "TOGGLE_NOTIFICATIONS" })}
+            >
               <RiNotification4Fill className="h-6 w-6 lg:h-8 lg:w-8" />
               {/* 如果有未讀通知，顯示紅點 */}
-              {friendRequests.some((request) => !request.isRead) && (
+              {state.notifications.some((notification) => !notification.isRead) && (
                 <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full"></span>
               )}
             </button>
 
-            {/* 通知下拉菜單 */}
-            {showNotifications && (
+            {state.showNotifications && (
               <div className="absolute right-0 mt-2 w-72 z-40 bg-white shadow-lg p-4 rounded-lg notification-box">
                 <h4 className="text-lg mb-2">通知</h4>
                 <p className="text-sm mb-2 text-gray-600">點擊通知將其標記為已讀</p>
-                {friendRequests.length > 0 ? (
+                {state.notifications.length > 0 ? (
                   <ul>
-                    {friendRequests.map((request) => (
+                    {state.notifications.map((notification) => (
                       <li
-                        key={request.id}
-                        onClick={() => handleNotificationClick(request.id)}
+                        key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
                         className={`border-b p-2 cursor-pointer ${
-                          request.isRead ? "text-gray-400" : "text-black"
+                          notification.isRead ? "bg-gray-100 text-gray-400" : "bg-white text-black"
                         }`}
                       >
-                        {request.name} 發送了好友邀請
+                        {notification.type === "friendRequest" &&
+                          `${notification.fromUserName} 發送了好友邀請`}
+                        {notification.type === "comment" &&
+                          `你收到了新留言：${notification.commentContent}`}
+                        {notification.type === "reply" &&
+                          `${notification.fromUserName} 回覆了你的留言：${notification.replyContent}`}
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm">暫無新通知</p>
+                  <p className="text-sm">暫無通知</p>
                 )}
               </div>
             )}
           </>
         )}
 
-        {/* 搜尋框，當 isSearchOpen 為 true 時顯示 */}
-        {isSearchOpen && user && (
+        {state.isSearchOpen && (
           <div className="z-40 absolute top-12 right-0 bg-white shadow-lg p-2 rounded w-[300px] search-box">
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setHasSearched(false);
-              }}
+              value={state.searchQuery}
+              ref={inputRef}
+              onChange={(e) => dispatch({ type: "SET_SEARCH_QUERY", payload: e.target.value })}
               placeholder="搜尋使用者名稱"
               className="w-full p-2 border border-gray-300 rounded"
             />
@@ -244,12 +289,12 @@ function Header() {
             </button>
 
             {/* 顯示搜尋結果 */}
-            {searchResults.length > 0 && (
+            {state.searchResults.length > 0 && (
               <ul className="mt-2">
-                {searchResults.map((result) => {
+                {state.searchResults.map((result) => {
                   const alreadyFriend = isFriend(result.id);
-                  const alreadySent = friendRequestsSent.includes(result.id);
-                  const isSelf = result.id === currentUserId;
+                  const alreadySent = state.friendRequestsSent.includes(result.id);
+                  const isSelf = result.id === state.currentUserId;
 
                   return (
                     <li key={result.id} className="p-2 border-b flex justify-between items-center">
@@ -293,21 +338,20 @@ function Header() {
                 })}
               </ul>
             )}
-            {hasSearched && searchResults.length === 0 && (
+            {state.hasSearched && state.searchResults.length === 0 && (
               <p className="mt-2 text-sm text-gray-600">未有該用戶資料</p>
             )}
-            {/* 顯示搜尋結果為空的情況 */}
-            {!hasSearched && searchQuery.trim() !== "" && (
+            {!state.hasSearched && state.searchQuery.trim() !== "" && (
               <p className="mt-2 text-sm text-gray-600">按下搜尋開始尋找</p>
             )}
           </div>
         )}
       </div>
-      {alertMessage && (
+      {state.alertMessage && (
         <Alert
-          message={alertMessage}
-          onClose={() => setAlertMessage(null)}
-          onConfirm={alertConfirm}
+          message={state.alertMessage}
+          onClose={() => dispatch({ type: "CLEAR_ALERT" })}
+          onConfirm={state.alertConfirm}
         />
       )}
     </header>
