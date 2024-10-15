@@ -3,11 +3,11 @@ import { FaUser, FaHistory } from "react-icons/fa";
 import { TiChartBar } from "react-icons/ti";
 import { IoClose } from "react-icons/io5";
 import { IoIosSettings } from "react-icons/io";
-import { fetchUserData } from "../utills/firebase-data";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { fetchUserData } from "../utils/firebase-data";
+import { Link, useNavigate } from "react-router-dom";
 import { BiLogOutCircle } from "react-icons/bi";
 import { signOut } from "firebase/auth";
-import { auth } from "../utills/firebase";
+import { auth } from "../utils/firebase";
 import { FaCircleUser } from "react-icons/fa6";
 
 function Sidebar({ isMenuOpen, setIsMenuOpen }) {

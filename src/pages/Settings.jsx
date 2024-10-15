@@ -5,7 +5,7 @@ import {
   handleImageUpload as firebaseHandleImageUpload,
   updateFriendName,
   getFriendIds,
-} from "../utills/firebase-data";
+} from "../utils/firebase-data";
 import Alert from "../components/alert";
 import { useParams } from "react-router-dom";
 import { FaCircleUser } from "react-icons/fa6";

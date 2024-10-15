@@ -11,10 +11,10 @@ import {
   listenToComments,
   toggleLikeDiary,
   deleteFriend,
-} from "../utills/firebase-data";
-import moodIcons from "../utills/moodIcons";
-import { auth, doc, onSnapshot } from "../utills/firebase";
-import { db } from "../utills/firebase";
+} from "../utils/firebase-data";
+import moodIcons from "../utils/moodIcons";
+import { auth, doc, onSnapshot } from "../utils/firebase";
+import { db } from "../utils/firebase";
 import Sidebar from "../pages/Sidebar";
 import Alert from "../components/alert";
 import Confirm from "../components/confirm";

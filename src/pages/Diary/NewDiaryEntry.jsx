@@ -10,13 +10,13 @@ import blue from "../../assets/images/blue.png";
 import sad from "../../assets/images/sad.png";
 import cry from "../../assets/images/cry.png";
 import { useLocation, useNavigate } from "react-router-dom";
-import { auth, db } from "../../utills/firebase";
+import { auth, db } from "../../utils/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { IoMdCloseCircle } from "react-icons/io";
 import { FaSpotify } from "react-icons/fa";
-import { simplifyTrack, handleImageUpload } from "../../utills/firebase-data";
+import { simplifyTrack, handleImageUpload } from "../../utils/firebase-data";
 import { SpotifyTracks } from "../../components/spotifyTrack";
-import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
+import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
 import Sidebar from "../Sidebar";
 import Alert from "../../components/alert";
 

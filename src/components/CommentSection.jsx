@@ -5,7 +5,7 @@ import {
   listenToComments,
   listenToReplies,
   fetchUserData,
-} from "../utills/firebase-data";
+} from "../utils/firebase-data";
 import { FaCircleUser } from "react-icons/fa6";
 import Alert from "./alert";
 

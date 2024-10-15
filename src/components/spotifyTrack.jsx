@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
-import { useSpotifyPlayer } from "../utills/SpotifyPlayerContext";
+import { useSpotifyPlayer } from "../utils/SpotifyPlayerContext";
 import { LuPlusCircle, LuCheckCircle } from "react-icons/lu";
 import { FiLoader, FiPlusCircle } from "react-icons/fi";
 

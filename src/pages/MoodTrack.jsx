@@ -12,8 +12,8 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import { fetchDiariesWithMoodStats } from "../utills/firebase-data";
-import moodIcons from "../utills/moodIcons";
+import { fetchDiariesWithMoodStats } from "../utils/firebase-data";
+import moodIcons from "../utils/moodIcons";
 import { useParams } from "react-router-dom";
 import { startOfWeek, startOfMonth, startOfYear, endOfToday, endOfWeek } from "date-fns";
 import { TiThMenu } from "react-icons/ti";

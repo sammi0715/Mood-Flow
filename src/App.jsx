@@ -10,7 +10,7 @@ import Header from "./pages/Header";
 import Footer from "./pages/Footer";
 import ViewDiaryEntry from "./pages/Diary/ViewDiaryEntry";
 import SpotifyCallback from "./pages/Diary/SpotifyCallback";
-import { SpotifyPlayerProvider } from "./utills/SpotifyPlayerContext";
+import { SpotifyPlayerProvider } from "./utils/SpotifyPlayerContext";
 
 function App() {
   return (

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchDiaries, fetchUserData } from "../../utills/firebase-data";
+import { fetchDiaries, fetchUserData } from "../../utils/firebase-data";
 import { TiThMenu } from "react-icons/ti";
 import { FaSpotify } from "react-icons/fa";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
-import moodIcons from "../../utills/moodIcons";
+import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
+import moodIcons from "../../utils/moodIcons";
 import Sidebar from "../Sidebar";
 import Alert from "../../components/alert";
 

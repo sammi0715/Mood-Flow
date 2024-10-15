@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { subMonths, format } from "date-fns";
-import { fetchHistoryData } from "../utills/firebase-data";
+import { fetchHistoryData } from "../utils/firebase-data";
 import { useParams } from "react-router-dom";
-import { useSpotifyPlayer } from "../utills/SpotifyPlayerContext";
-import moodIcons from "../utills/moodIcons";
+import { useSpotifyPlayer } from "../utils/SpotifyPlayerContext";
+import moodIcons from "../utils/moodIcons";
 import Sidebar from "../pages/Sidebar";
 import Alert from "../components/alert";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";

@@ -2,7 +2,7 @@ import React, { useReducer, useEffect, useRef } from "react";
 import logo from "../assets/images/logo-3.png";
 import { FaSearch } from "react-icons/fa";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { auth } from "../utills/firebase";
+import { auth } from "../utils/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { RiNotification4Fill } from "react-icons/ri";
 import {
@@ -12,7 +12,7 @@ import {
   listenToFriendRequests,
   markRequestAsRead,
   listenToNotifications,
-} from "../utills/firebase-data";
+} from "../utils/firebase-data";
 import Alert from "../components/alert";
 
 const initialState = {

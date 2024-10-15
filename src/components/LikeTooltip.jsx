@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { Tooltip } from "react-tooltip";
 import { getDoc, doc } from "firebase/firestore";
-import { db } from "../utills/firebase";
+import { db } from "../utils/firebase";
 
 const LikeTooltip = ({ diaryId, likes, userId, toggleLike }) => {
   const [likeNames, setLikeNames] = useState([]);
