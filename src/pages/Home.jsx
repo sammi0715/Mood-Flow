@@ -5,11 +5,12 @@ import { FcGoogle } from "react-icons/fc";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { signUpUser, loginUser, signInWithGoogle, handleSetUsername } from "../utills/auth";
-import { auth } from "../utills/firebase";
-import Alert from "../utills/alert";
+import { auth, db } from "../utills/firebase";
+import Alert from "../components/alert";
 import moodIcons from "../utills/moodIcons";
 import logo from "../assets/images/logo-1.png";
 import gsap from "gsap";
+import { doc, getDoc } from "firebase/firestore";
 
 function Home() {
   const [showLogin, setShowLogin] = useState(false);
@@ -18,9 +19,9 @@ function Home() {
   const [showSetUsername, setShowSetUsername] = useState(false);
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     gsap.utils.toArray(".emoji").forEach((emoji) => {
@@ -34,10 +35,20 @@ function Home() {
       });
     });
   }, []);
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        navigate(`/diary-calendar/${user.uid}`);
+        const userDocRef = doc(db, "users", user.uid);
+        getDoc(userDocRef).then((userSnapshot) => {
+          const userData = userSnapshot.data();
+
+          if (!userData || !userData.name) {
+            setShowSetUsername(true);
+          } else {
+            navigate(`/diary-calendar/${user.uid}`);
+          }
+        });
       }
     });
 
@@ -89,11 +100,11 @@ function Home() {
     try {
       const user = await signUpUser(name, email, password, selectedImageURL);
       setAlertMessage("註冊成功！");
-      setAlertConfirm(() => () => {
+      setTimeout(() => {
         navigate(`/diary-calendar/${user.uid}`);
-      });
+      }, 2000);
     } catch (error) {
-      setAlertMessage(error.message); // 顯示錯誤訊息
+      setAlertMessage(error.message);
     }
   };
 
@@ -107,7 +118,7 @@ function Home() {
         navigate(`/diary-calendar/${user.uid}`);
       }, 2000);
     } catch (error) {
-      setAlertMessage(error.message); // 顯示錯誤訊息
+      setAlertMessage(error.message);
     }
   };
 
@@ -117,7 +128,6 @@ function Home() {
       const { user, needsUsername } = result;
 
       if (needsUsername) {
-        // 顯示設定帳號名稱的介面
         setShowSetUsername(true);
       } else {
         setAlertMessage("Google 登入成功！");
@@ -149,7 +159,6 @@ function Home() {
           <img src={logo} className="w-8/12 h-8/12 md:w-2/4 md:h-2/4 pt-36 lg:pt-20 md:pt-32" />
         </div>
 
-        {/* 如果有 Alert 訊息，則顯示 CustomAlert */}
         {alertMessage && (
           <Alert
             message={alertMessage}
@@ -190,18 +199,18 @@ function Home() {
         <div className="w-full flex flex-col justify-center items-center mt-24">
           <button
             onClick={handleLoginClick}
-            className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-orange-200"
+            className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-orange-200 pointer hover:bg-orange-300 rounded-sm text-base md:text-xl"
           >
             登入
           </button>
           <button
             onClick={handleSignUpClick}
-            className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-amber-200 mt-4 xl:mt-9"
+            className="w-32 h-12 lg:w-48 lg:h-16 xl:w-48 xl:h-16 bg-amber-200 mt-4 xl:mt-9 pointer hover:bg-amber-300 rounded-sm text-base md:text-xl"
           >
             註冊
           </button>
           <div className="flex flex-col items-center justify-center mt-4">
-            <p className="text-sm text-center text-gray-700 relative before:block before:absolute before:left-[-50px] before:top-[50%] before:w-[40px] before:border-t before:border-gray-500 after:block after:absolute after:right-[-50px] after:top-[50%] after:w-[40px] after:border-t after:border-gray-500">
+            <p className="text-sm md:text-base text-center text-gray-700 relative before:block before:absolute before:left-[-50px] before:top-[50%] before:w-[40px] before:border-t before:border-gray-500 after:block after:absolute after:right-[-50px] after:top-[50%] after:w-[40px] after:border-t after:border-gray-500">
               或使用以下進行
             </p>
 
@@ -213,7 +222,6 @@ function Home() {
         </div>
       </div>
 
-      {/* 登入視窗 */}
       {showLogin && (
         <div className="bg-gray-200 bg-opacity-50 fixed inset-0 flex justify-center items-center">
           <div className="bg-white p-8 rounded shadow-lg w-80 lg:w-96">
@@ -244,14 +252,17 @@ function Home() {
                   <p className="text-red-500">{loginErrors.password.message}</p>
                 )}
               </div>
-              <button type="submit" className="w-full bg-amber-200 py-2">
+              <button
+                type="submit"
+                className="w-full bg-amber-200 py-2 pointer hover:bg-amber-300 rounded-sm"
+              >
                 登入
               </button>
             </form>
           </div>
         </div>
       )}
-      {/* 帳號名稱設定彈窗 */}
+
       {showSetUsername && (
         <div className="bg-gray-200 bg-opacity-50 fixed inset-0 flex justify-center items-center">
           <div className="bg-white p-8 rounded shadow-lg w-96">
@@ -266,12 +277,15 @@ function Home() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="請輸入帳號名稱"
+                  placeholder="請輸入使用者名稱"
                   className="border border-gray-300 p-2 w-full rounded"
                 />
                 {error && <p className="text-red-500">{error}</p>}
               </div>
-              <button onClick={handleUsernameSubmit} className="w-full bg-gray-300 py-2">
+              <button
+                onClick={handleUsernameSubmit}
+                className="w-full bg-orange-200 py-2 pointer  hover:bg-orange-300 rounded-sm"
+              >
                 確認
               </button>
             </div>
@@ -279,15 +293,14 @@ function Home() {
         </div>
       )}
 
-      {/* 註冊視窗 */}
       {showSignUp && (
         <div className="bg-gray-200 bg-opacity-50 fixed inset-0 flex justify-center items-center">
-          <div className="bg-white p-8 rounded shadow-lg  w-80 lg:w-96">
+          <div className="bg-white p-8 rounded shadow-lg  w-80 lg:w-96 min-h-[550px] ">
             <div className="flex justify-between">
               <h2 className="text-2xl mb-3">註冊</h2>
               <IoClose onClick={closeModal} className="h-8 w-8" />
             </div>
-            {/* 頭像上傳區域 */}
+
             <div className="flex justify-center items-center mb-4">
               {selectedImageURL ? (
                 <img
@@ -312,7 +325,7 @@ function Home() {
               onChange={handleImageChange}
             />
 
-            <form onSubmit={handleSignUpSubmit(onSignUp)} className="space-y-4">
+            <form onSubmit={handleSignUpSubmit(onSignUp)} className="space-y-6">
               <div>
                 <label>使用者名稱</label>
                 <input
@@ -327,7 +340,9 @@ function Home() {
                   placeholder="使用者名稱"
                   className="border border-gray-300 p-2 w-full rounded"
                 />
-                {signUpErrors.name && <p className="text-red-500">{signUpErrors.name.message}</p>}
+                {signUpErrors.name && (
+                  <p className="text-red-500 min-h-[20px]">{signUpErrors.name.message}</p>
+                )}
               </div>
               <div>
                 <label>電子信箱</label>
@@ -337,7 +352,9 @@ function Home() {
                   placeholder="電子信箱"
                   className="border border-gray-300 p-2 w-full rounded"
                 />
-                {signUpErrors.email && <p className="text-red-500">{signUpErrors.email.message}</p>}
+                {signUpErrors.email && (
+                  <p className="text-red-500  min-h-[20px]">{signUpErrors.email.message}</p>
+                )}
               </div>
               <div>
                 <label>密碼</label>
@@ -351,10 +368,13 @@ function Home() {
                   className="border border-gray-300 p-2 w-full rounded"
                 />
                 {signUpErrors.password && (
-                  <p className="text-red-500">{signUpErrors.password.message}</p>
+                  <p className="text-red-500  min-h-[20px]">{signUpErrors.password.message}</p>
                 )}
               </div>
-              <button type="submit" className="w-full bg-orange-200 py-2">
+              <button
+                type="submit"
+                className="w-full bg-orange-200 py-2 pointer hover:bg-orange-300 rounded-sm"
+              >
                 註冊
               </button>
             </form>
