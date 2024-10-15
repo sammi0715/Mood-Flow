@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Alert from "./alert";
+import Alert from "../components/alert";
 const generateCodeVerifier = (length = 128) => {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
   let verifier = "";
@@ -245,13 +245,10 @@ export const SpotifyPlayerProvider = ({ children }) => {
         if (refreshed) {
           token = localStorage.getItem("spotify_token");
           response = await makeRequest(token);
-          if ([401, 403].includes(response.status)) {
-            console.error("After token refresh, still got authorization error.");
-            throw new Error(`Authorization failed after token refresh: ${response.status}`);
-          }
         } else {
-          console.error("Failed to refresh token.");
-          throw new Error("Unable to refresh token. User might need to re-login.");
+          setSpotifyToken(null);
+          setAlertMessage("您的 Spotify 連線已過期，請重新登入。");
+          throw new Error("Spotify 連線已過期");
         }
       }
 
