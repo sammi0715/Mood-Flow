@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
-
+import { FaSpotify } from "react-icons/fa";
+import { FiLoader } from "react-icons/fi";
 function SpotifyCallback() {
   const navigate = useNavigate();
   const { exchangeToken } = useSpotifyPlayer();
@@ -24,7 +25,16 @@ function SpotifyCallback() {
     }
   }, [navigate, exchangeToken]);
 
-  return <div>正在處理 Spotify 授權，請稍候...</div>;
+  return (
+    <div className="flex flex-col justify-center items-center min-h-screen text-green-500 ">
+      <FaSpotify className="text-7xl mb-4" />
+      <p className="text-xl font-semibold">正在處理 Spotify 授權，請稍候...</p>
+
+      <div className="mt-4">
+        <FiLoader className="w-16 h-16 animate-spin animate-spin-slow" />
+      </div>
+    </div>
+  );
 }
 
 export default SpotifyCallback;
