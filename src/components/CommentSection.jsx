@@ -24,7 +24,6 @@ function CommentSection({ diaryId, diaryOwnerId, currentUserId }) {
     const unsubscribeComments = listenToComments(diaryId, (fetchedComments) => {
       setComments(fetchedComments);
 
-      // 確保每條留言的回覆正確監聽並更新
       fetchedComments.forEach((comment) => {
         if (!repliesListeners.current[comment.id]) {
           const unsubscribe = listenToReplies(diaryId, comment.id, (fetchedReplies) => {
@@ -157,16 +156,14 @@ function CommentSection({ diaryId, diaryOwnerId, currentUserId }) {
 
               <div>
                 <div className="p-2 bg-antique-white rounded-lg">
-                  <p className="font-semibold text-base">
-                    {userProfiles[comment.userId]?.name || "載入中..."}
-                  </p>
+                  <p className="text-base">{userProfiles[comment.userId]?.name || "載入中..."}</p>
                   <p className="text-sm mt-2">{comment.content}</p>
                 </div>
 
                 <div className="flex  items-center mt-2">
                   <button
                     onClick={() => handleReplyClick(comment.id)}
-                    className="text-sm text-blue-500 mr-4"
+                    className="text-sm text-blue-400 mr-4"
                   >
                     回覆
                   </button>
@@ -192,7 +189,7 @@ function CommentSection({ diaryId, diaryOwnerId, currentUserId }) {
                           )}
                           <div>
                             <div className="bg-antique-white p-2 rounded-lg">
-                              <p className="font-medium text-sm">
+                              <p className="text-base">
                                 {userProfiles[reply.userId]?.name || "載入中..."}
                               </p>
                               <p className="text-sm">{reply.content}</p>
@@ -235,7 +232,7 @@ function CommentSection({ diaryId, diaryOwnerId, currentUserId }) {
         </button>
       )}
 
-      <div className="add-comment mt-4">
+      <div className="add-comment mt-4 flex">
         <input
           type="text"
           value={commentTexts}
@@ -243,7 +240,7 @@ function CommentSection({ diaryId, diaryOwnerId, currentUserId }) {
           placeholder="輸入留言..."
           className="border p-2 w-full rounded"
         />
-        <button onClick={handleAddComment} className="mt-2 px-2 bg-amber-500 text-white rounded">
+        <button onClick={handleAddComment} className="ml-4 w-12 bg-amber-500 text-white rounded">
           送出
         </button>
       </div>
