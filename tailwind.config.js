@@ -36,6 +36,18 @@ export default {
       fontFamily: {
         'pencil-font': ['pencil-font', "sans-serif"],
       },
+      keyframes: {
+        bounce: {
+          '0%, 100%': { transform: 'translateY(2px)', easing: 'ease-in-out' },
+          '50%': { transform: 'translateY(-5px)', easing: 'ease-in-out' },
+        },
+      },
+      animation: {
+        'spin-slow': 'spin 2s linear infinite',
+        'bounce-custom': 'bounce 1.5s infinite ease-in-out',
+
+      },
+
     },
   },
   plugins: [],
