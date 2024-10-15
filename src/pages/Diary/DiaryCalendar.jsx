@@ -7,7 +7,7 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { useSpotifyPlayer } from "../../utills/SpotifyPlayerContext";
 import moodIcons from "../../utills/moodIcons";
 import Sidebar from "../Sidebar";
-import Alert from "../../utills/alert";
+import Alert from "../../components/alert";
 
 import {
   format,
@@ -39,16 +39,16 @@ const monthsInChinese = {
 };
 
 function DiaryCalendar() {
-  const { userId } = useParams();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [diaries, setDiaries] = useState([]);
-  const navigate = useNavigate();
-  const throttleTimeout = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const { userId } = useParams();
+  const navigate = useNavigate();
+  const throttleTimeout = useRef(null);
+  const { spotifyToken, handleSpotifyLogin } = useSpotifyPlayer();
 
   useEffect(() => {
     if (!localStorage.getItem("visited")) {
@@ -121,7 +121,11 @@ function DiaryCalendar() {
         >
           <div
             className={`absolute top-2 left-2 lg:left-4 text-xs md:text-base xl:text-xl text-dark-brown 
-            ${isToday ? "bg-dark-orange text-white rounded-full px-2 py-1" : ""}`}
+            ${
+              isToday
+                ? "bg-dark-orange text-white rounded-full w-4 h-4 xl:w-8 xl:h-8 md:w-6 md:h-6"
+                : ""
+            }`}
           >
             {format(currentDay, "d")}
           </div>
