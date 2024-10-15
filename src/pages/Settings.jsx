@@ -6,7 +6,7 @@ import {
   updateFriendName,
   getFriendIds,
 } from "../utills/firebase-data";
-import Alert from "../utills/alert";
+import Alert from "../components/alert";
 import { useParams } from "react-router-dom";
 import { FaCircleUser } from "react-icons/fa6";
 const ProfileSettings = () => {
