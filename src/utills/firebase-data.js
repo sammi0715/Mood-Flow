@@ -163,63 +163,45 @@ export const simplifyTrack = (track) => {
     };
 };
 
-export const handleImageUpload = (event, uploadedImages, setUploadedImages) => {
-    return new Promise((resolve, reject) => {
-        if (!event || !event.target || !event.target.files) {
-            reject(new Error("未提供有效的事件對象"));
-            return;
+export const handleImageUpload = async (event, currentImages, onImageUpload) => {
+    if (!event || !event.target || !event.target.files) {
+        throw new Error("未提供有效的事件對象");
+    }
+
+    const files = Array.from(event.target.files);
+    if (files.length + currentImages.length > 3) {
+        throw new Error("您最多只能上傳三張圖片。");
+    }
+
+    for (const file of files) {
+        if (!file.type.startsWith("image/")) {
+            throw new Error("請上傳圖片檔案");
         }
 
-        const files = Array.from(event.target.files);
-        if (files.length + uploadedImages.length > 3) {
-            reject(new Error("您最多只能上傳三張圖片。"));
-            return;
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            throw new Error("圖片大小不得超過 5MB");
         }
 
-        files.forEach((file) => {
+        const storageRef = ref(storage, `images/${Date.now()}_${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
 
-            if (!file.type.startsWith("image/")) {
-                console.error("請上傳圖片檔案");
-                reject(new Error("無效的檔案類型"));
-                return;
+        uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log(`Upload is ${progress}% done`);
+            },
+            (error) => {
+                console.error("圖片上傳失敗: ", error);
+                throw error;
+            },
+            async () => {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                onImageUpload(downloadURL);
             }
-
-
-            const maxSize = 5 * 1024 * 1024;
-            if (file.size > maxSize) {
-                reject(new Error("圖片大小不得超過 5MB"));
-                return;
-            }
-
-
-            const filePreviewURL = URL.createObjectURL(file);
-            setUploadedImages((prevImages) => [...prevImages, filePreviewURL]);
-
-
-            const storageRef = ref(storage, `images/${Date.now()}_${file.name}`);
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            uploadTask.on(
-                "state_changed",
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                },
-                (error) => {
-                    console.error("圖片上傳失敗: ", error);
-                    reject(error);
-                },
-                () => {
-
-                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        setUploadedImages((prevImages) =>
-                            prevImages.map((img) => (img === filePreviewURL ? downloadURL : img))
-                        );
-                        resolve(downloadURL);
-                    });
-                }
-            );
-        });
-    });
+        );
+    }
 };
 
 export const uploadImageToStorage = (file, setUploadedImages) => {
@@ -271,7 +253,7 @@ export const fetchDiariesWithMoodStats = async (userId, startDate, endDate) => {
     try {
         const diariesRef = collection(db, "diaries");
 
-        // 查詢指定日期範圍內的日記資料
+
         const q = query(
             diariesRef,
             where("userId", "==", userId),
@@ -334,7 +316,7 @@ export const fetchFriends = async (userId) => {
     }
 };
 
-// 獲取好友請求
+
 export const fetchFriendRequests = async (userId) => {
     try {
         const friendRequestsRef = collection(db, "users", userId, "friend_requests");
@@ -347,12 +329,11 @@ export const fetchFriendRequests = async (userId) => {
     }
 };
 
-// 發送好友邀請
+
 export const sendFriendRequest = async (senderId, targetUser) => {
     if (senderId === targetUser.id) {
         alert("該帳戶為目前使用者");
     }
-
 
     try {
 
@@ -374,6 +355,15 @@ export const sendFriendRequest = async (senderId, targetUser) => {
             status: "pending",
         });
 
+        const notificationsRef = collection(db, "notifications");
+        await addDoc(notificationsRef, {
+            toUserId: targetUser.id,
+            fromUserId: senderId,
+            fromUserName: senderData.name,
+            type: "friendRequest",
+            createdAt: serverTimestamp(),
+            isRead: false,
+        });
         console.log("好友邀請已發送！");
     } catch (error) {
         console.error("發送好友邀請失敗：", error);
@@ -484,7 +474,7 @@ export const getFriendIds = async (userId) => {
     }
 };
 
-// 刪除好友
+
 export const deleteFriend = async (currentUserId, friendId) => {
     try {
         const batch = writeBatch(db);
@@ -506,7 +496,7 @@ export const deleteFriend = async (currentUserId, friendId) => {
 };
 
 
-// 實時監聽好友列表
+
 export const listenToFriends = (userId, callback) => {
     const friendsRef = collection(db, "users", userId, "friends");
 
@@ -533,7 +523,7 @@ export const updateFriendName = async (userId, friendId, newName) => {
 };
 
 
-// 實時監聽好友請求
+
 export const listenToFriendRequests = (userId, callback) => {
     const friendRequestsRef = collection(db, "users", userId, "friend_requests");
     const unsubscribe = onSnapshot(friendRequestsRef, (snapshot) => {
@@ -546,27 +536,100 @@ export const listenToFriendRequests = (userId, callback) => {
 };
 
 
-export const markRequestAsRead = async (userId, requestId) => {
-    const requestRef = doc(db, `users/${userId}/friend_requests/${requestId}`);
-    await updateDoc(requestRef, { isRead: true });
+
+export const markRequestAsRead = async (notificationId) => {
+    try {
+        const notificationRef = doc(db, `notifications/${notificationId}`);
+        await updateDoc(notificationRef, { isRead: true });
+        console.log("通知已標記為已讀");
+    } catch (error) {
+        console.error("標記通知為已讀時發生錯誤:", error);
+    }
 };
 
-// 新增留言
-export const addComment = async (diaryId, comment) => {
+
+
+export const addCommentAndNotify = async (diaryId, commentContent, diaryOwnerId) => {
     try {
         const currentUser = auth.currentUser;
+        if (!currentUser || !diaryOwnerId) {
+            throw new Error("當前用戶或日記擁有者未定義");
+        }
+
         const commentsRef = collection(db, `diaries/${diaryId}/comments`);
-        await addDoc(commentsRef, {
+
+        // 添加留言
+        const commentDoc = await addDoc(commentsRef, {
             userId: currentUser.uid,
-            content: comment,
+            content: commentContent,  // 確保存入正確的留言內容
             createdAt: serverTimestamp(),
         });
-        console.log("留言添加成功！");
+
+
+        if (diaryOwnerId !== currentUser.uid) {
+            const notificationsRef = collection(db, "notifications");
+            await addDoc(notificationsRef, {
+                toUserId: diaryOwnerId,
+                fromUserId: currentUser.uid,
+                diaryId: diaryId,
+                commentId: commentDoc.id,
+                commentContent: commentContent,
+                type: "comment",
+                createdAt: serverTimestamp(),
+                isRead: false,
+            });
+        }
     } catch (error) {
-        console.error("添加留言時發生錯誤:", error);
+        console.error("添加留言或通知時發生錯誤:", error);
         throw error;
     }
 };
+
+
+
+
+export const addReplyAndNotify = async (diaryId, commentId, replyContent, replyToUserId) => {
+    try {
+        const currentUser = auth.currentUser;
+        if (!replyToUserId || !currentUser) {
+            throw new Error("回覆對象或當前用戶未定義");
+        }
+
+        const repliesRef = collection(db, `diaries/${diaryId}/comments/${commentId}/replies`);
+
+        // 添加回覆
+        await addDoc(repliesRef, {
+            userId: currentUser.uid,
+            content: replyContent,
+            createdAt: serverTimestamp(),
+            replyTo: replyToUserId,
+        });
+
+
+        const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
+        const fromUserName = currentUserDoc.exists() ? currentUserDoc.data().name : "未知用戶";
+
+
+        if (replyToUserId !== currentUser.uid) {
+            const notificationsRef = collection(db, "notifications");
+            await addDoc(notificationsRef, {
+                toUserId: replyToUserId,
+                fromUserId: currentUser.uid,
+                fromUserName: fromUserName,
+                diaryId: diaryId,
+                commentId: commentId,
+                replyContent: replyContent,
+                type: "reply",
+                createdAt: serverTimestamp(),
+                isRead: false,
+            });
+        }
+    } catch (error) {
+        console.error("添加回覆或通知時發生錯誤:", error);
+        throw error;
+    }
+};
+
 
 
 export const listenToComments = (diaryId, callback) => {
@@ -577,13 +640,54 @@ export const listenToComments = (diaryId, callback) => {
         const comments = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
+            replies: [],
         }));
         callback(comments);
+    }, (error) => {
+        console.error("監聽留言時發生錯誤: ", error);
     });
 };
 
 
-// 更新愛心按讚狀態
+export const listenToReplies = (diaryId, commentId, callback) => {
+    const repliesRef = collection(db, `diaries/${diaryId}/comments/${commentId}/replies`);
+    const q = query(repliesRef, orderBy("createdAt", "asc"));
+
+    return onSnapshot(q, (snapshot) => {
+        const replies = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+        console.log("回覆變更:", replies);
+        callback(replies);
+    }, (error) => {
+        console.error(`監聽回覆 (留言 ID: ${commentId}) 時發生錯誤: `, error);
+    });
+};
+
+
+export const listenToNotifications = (userId, callback) => {
+    const notificationsRef = collection(db, "notifications");
+    const q = query(
+        notificationsRef,
+        where("toUserId", "==", userId),
+        orderBy("createdAt", "desc")
+    );
+
+    return onSnapshot(q, (snapshot) => {
+        const notifications = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+        callback(notifications);
+    });
+};
+
+
+
+
+
+
 export const toggleLikeDiary = async (diaryId, currentLikes) => {
     try {
         const diaryRef = doc(db, "diaries", diaryId);
