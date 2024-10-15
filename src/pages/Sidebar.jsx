@@ -63,7 +63,6 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* 右上角的 X 按鈕 */}
         <div className="absolute top-1 right-2 cursor-pointer">
           <IoClose
             className="w-[20px] h-[20px] lg:w-6 lg:h-6"
@@ -71,7 +70,6 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
           />
         </div>
 
-        {/* 使用者頭像和名稱 */}
         <div className="flex items-center mb-4 lg:mb-6">
           {profileImage ? (
             <img
@@ -87,9 +85,7 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
           </div>
         </div>
 
-        {/* 側邊選單的項目 */}
         <ul>
-          {" "}
           <Link to={`/community/${userId}`} className="text-sm lg:text-lg">
             <li className="mb-4 flex items-center hover:bg-light-yellow p-2 rounded-md cursor-pointer">
               <FaUser className="mr-2 w-4 h-4 lg:w-6 lg:h-6" />
@@ -116,7 +112,6 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
           </Link>
         </ul>
 
-        {/* 登出按鈕 */}
         <div className="absolute bottom-48 left-6 align-center cursor-pointer">
           <button
             onClick={handleLogout}
