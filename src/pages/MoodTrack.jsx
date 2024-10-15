@@ -22,7 +22,7 @@ const moodColorMap = {
   哭泣: "#c4b6e6",
   悲傷: "#d0b0b5",
   生氣: "#df0836",
-  憂鬱: "#bbd5f3",
+  憂鬱: "#84acda",
   焦慮: "#f87171",
   平靜: "#b5dcb4",
   快樂: "#f0b26f",
@@ -160,7 +160,6 @@ const MoodTrack = () => {
           <h2 className="text-2xl lg:text-3xl">心情統計</h2>
         </div>
 
-        {/* 選擇篩選條件 */}
         <div className="mb-6 flex justify-end">
           <select
             onChange={handleFilterChange}
@@ -173,7 +172,6 @@ const MoodTrack = () => {
           </select>
         </div>
 
-        {/* 心情分布圓餅圖 */}
         <div className="mb-10 border border-black rounded-lg p-6">
           <h2 className="text-xl lg:text-2xl mb-4 text-left">心情分佈</h2>
           <div className="flex flex-col items-center mb-10 w-full">
@@ -217,7 +215,6 @@ const MoodTrack = () => {
           <p className="mt-4 text-xl text-center">Keep good mood!</p>
         </div>
 
-        {/* 心情趨勢圖 */}
         <div className="border border-black rounded-lg p-6 ">
           <h2 className="text-xl lg:text-2xl mb-4">心情趨勢</h2>
           {trendData.length > 0 ? (
@@ -277,10 +274,11 @@ const MoodTrack = () => {
 
           <p className="mt-4 text-xl text-center">Go with the flow ～</p>
         </div>
-        {/* 圖表說明進度條 */}
+
         <div className="mt-8 p-6 border border-gray-300 rounded-lg">
           <h2 className="text-xl lg:text-2xl mb-4">圖表說明</h2>
-          <div className="w-full flex flex-wrap items-center">
+          <p>各個區間所代表的心情</p>
+          <div className="w-full flex flex-wrap items-center mt-8">
             {Object.entries(moodCategories).map(([category, moods]) => (
               <div
                 key={category}
