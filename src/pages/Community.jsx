@@ -8,24 +8,24 @@ import {
   fetchUserData,
   listenToFriends,
   listenToFriendRequests,
-  addComment,
   listenToComments,
   toggleLikeDiary,
   deleteFriend,
 } from "../utills/firebase-data";
 import moodIcons from "../utills/moodIcons";
-import { auth } from "../utills/firebase";
+import { auth, doc, onSnapshot } from "../utills/firebase";
+import { db } from "../utills/firebase";
 import Sidebar from "../pages/Sidebar";
-import Alert from "./../utills/alert";
-import Confirm from "./../utills/confirm";
-import LikeTooltip from "../utills/LikeTooltip";
+import Alert from "../components/alert";
+import Confirm from "../components/confirm";
+import LikeTooltip from "../components/LikeTooltip";
 import { FaRegComment, FaSearch } from "react-icons/fa";
 import { IoIosClose, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { IoCloseCircle } from "react-icons/io5";
-import { FaCircleUser } from "react-icons/fa6";
 import { RiUser5Fill } from "react-icons/ri";
 import { TiThMenu } from "react-icons/ti";
-
+import CommentSection from "../components/CommentSection";
+import Music from "../assets/images/music-note.png";
 function Community() {
   const [friends, setFriends] = useState([]);
   const [isFriendsListOpen, setIsFriendsListOpen] = useState(false);
@@ -34,12 +34,9 @@ function Community() {
   const [selectedFriendDiaries, setSelectedFriendDiaries] = useState([]);
   const [loadingDiaries, setLoadingDiaries] = useState(false);
   const [error, setError] = useState(null);
-  const [commentTexts, setCommentTexts] = useState("");
   const [diaryComments, setDiaryComments] = useState({});
   const [likeStatuses, setLikeStatuses] = useState({});
   const [showCommentInput, setShowCommentInput] = useState({});
-  const [showAllComments, setShowAllComments] = useState({});
-  const [userProfiles, setUserProfiles] = useState({});
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
@@ -84,14 +81,24 @@ function Community() {
           setSelectedFriendDiaries(diaries);
 
           diaries.forEach((diary) => {
+            const diaryRef = doc(db, "diaries", diary.id);
+            const unsubscribeLikes = onSnapshot(diaryRef, (snapshot) => {
+              if (snapshot.exists()) {
+                const diaryData = snapshot.data();
+                setLikeStatuses((prev) => ({
+                  ...prev,
+                  [diary.id]: diaryData.likes || [],
+                }));
+              }
+            });
+
             const unsubscribeComments = listenToComments(diary.id, (updatedComments) => {
               setDiaryComments((prev) => ({ ...prev, [diary.id]: updatedComments }));
             });
 
-            setLikeStatuses((prev) => ({ ...prev, [diary.id]: diary.likes || [] }));
-
             return () => {
               unsubscribeComments();
+              unsubscribeLikes();
             };
           });
         } catch (err) {
@@ -101,6 +108,7 @@ function Community() {
           setLoadingDiaries(false);
         }
       };
+
       fetchSelectedFriendDiaries();
     } else {
       setSelectedFriendDiaries([]);
@@ -186,30 +194,8 @@ function Community() {
     setShowConfirmDialog(true);
   };
 
-  const handleAddComment = async (diaryId) => {
-    const commentText = commentTexts[diaryId];
-    if (!commentText?.trim()) return;
-    if (!auth.currentUser) {
-      setAlertMessage("請先登入才能執行此操作");
-      return;
-    }
-    try {
-      await addComment(diaryId, commentText);
-      setCommentTexts((prev) => ({ ...prev, [diaryId]: "" }));
-    } catch (error) {
-      console.error("添加留言時出錯:", error);
-    }
-  };
-
   const handleToggleCommentInput = (diaryId) => {
     setShowCommentInput((prev) => ({
-      ...prev,
-      [diaryId]: !prev[diaryId],
-    }));
-  };
-
-  const handleToggleComments = (diaryId) => {
-    setShowAllComments((prev) => ({
       ...prev,
       [diaryId]: !prev[diaryId],
     }));
@@ -219,26 +205,13 @@ function Community() {
     try {
       const currentLikes = likeStatuses[diaryId] || [];
       await toggleLikeDiary(diaryId, currentLikes);
+
       const updatedLikes = currentLikes.includes(auth.currentUser.uid)
         ? currentLikes.filter((id) => id !== auth.currentUser.uid)
         : [...currentLikes, auth.currentUser.uid];
       setLikeStatuses((prev) => ({ ...prev, [diaryId]: updatedLikes }));
     } catch (error) {
       console.error("更新按讚狀態時出錯:", error);
-    }
-  };
-
-  const handleCommentTextChange = (diaryId, text) => {
-    setCommentTexts((prev) => ({ ...prev, [diaryId]: text }));
-  };
-
-  const fetchUserProfile = async (userId) => {
-    if (!userProfiles[userId]) {
-      const userProfile = await fetchUserData(userId);
-      setUserProfiles((prev) => ({
-        ...prev,
-        [userId]: userProfile,
-      }));
     }
   };
 
@@ -345,7 +318,7 @@ function Community() {
                   </li>
                 ))
               ) : (
-                <p className="text-sm lg:text-base mt-6">暫無好友邀請～</p>
+                <p className="text-sm lg:text-base mt-6 lg:text-xl">暫無好友邀請～</p>
               )}
             </ul>
 
@@ -373,19 +346,40 @@ function Community() {
                           )}
                           <p>{selectedFriend.name}</p>
                         </div>
-
                         <div className="flex items-center mt-2">
                           <img
                             src={moodIcons[diary.mood]}
                             alt={diary.mood}
-                            className="w-6 h-6 mr-2"
+                            className="w-8 h-8 mr-2"
                           />
                           <p>{diary.mood}</p>
                         </div>
-                        <p className="text-sm lg:text-base break-words whitespace-pre-wrap">
+
+                        {diary.track && (
+                          <div className="mt-4 flex items-center">
+                            <img src={Music} className="w-5 h-5 mr-2 animate-bounce-custom" />
+                            <p className="text-sm md:text-base mr-2">
+                              {diary.track.artists.join(", ")}
+                            </p>
+                            -<p className="text-sm md:text-base ml-2">{diary.track.name}</p>
+                          </div>
+                        )}
+                        <p className="mt-4 mb-4 text-sm lg:text-base break-words whitespace-pre-wrap">
                           {diary.content}
                         </p>
-
+                        {/* 顯示圖片 */}
+                        {diary.imageUrls && diary.imageUrls.length > 0 && (
+                          <div className="mt-4">
+                            {diary.imageUrls.map((url, index) => (
+                              <img
+                                key={index}
+                                src={url}
+                                alt={`日記圖片 ${index + 1}`}
+                                className="w-[200px] h-auto mb-2 rounded"
+                              />
+                            ))}
+                          </div>
+                        )}
                         <p className="text-xs lg:text-sm text-right text-gray-500"> {diary.date}</p>
                         <div className="flex items-center space-x-4">
                           <LikeTooltip
@@ -394,6 +388,7 @@ function Community() {
                             userId={auth.currentUser?.uid}
                             toggleLike={handleToggleLike}
                           />
+
                           <button
                             className="text-black flex items-center"
                             onClick={() => handleToggleCommentInput(diary.id)}
@@ -403,78 +398,12 @@ function Community() {
                           </button>
                         </div>
 
-                        <ul className="mt-4">
-                          {diaryComments[diary.id]
-                            ?.slice(
-                              0,
-                              showAllComments[diary.id] ? diaryComments[diary.id].length : 2
-                            )
-                            .map((comment) => {
-                              if (!userProfiles[comment.userId]) {
-                                fetchUserProfile(comment.userId);
-                              }
-                              const userProfile = userProfiles[comment.userId] || {};
-                              return (
-                                <li key={comment.id} className="mb-2">
-                                  <div className="flex items-start mb-1">
-                                    {/* Profile Image */}
-                                    {userProfile.profile_pic ? (
-                                      <img
-                                        src={userProfile.profile_pic}
-                                        alt={`${userProfile.name} profile`}
-                                        className="w-8 h-8 rounded-full mr-2"
-                                      />
-                                    ) : (
-                                      <div className="w-8 h-8 rounded-full mr-2">
-                                        <FaCircleUser />
-                                      </div>
-                                    )}
-
-                                    <div>
-                                      <div className="p-2 bg-antique-white rounded-lg">
-                                        <p className="text-sm lg:text-base mr-2">
-                                          {userProfile.name || "Loading..."}
-                                        </p>
-                                        <p className="text-sm lg:text-base">{comment.content}</p>
-                                      </div>
-
-                                      <p className="text-xs lg:text-sm text-gray-500 mt-1">
-                                        {comment.createdAt?.toDate().toLocaleString()}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </li>
-                              );
-                            })}
-
-                          {diaryComments[diary.id]?.length > 2 && (
-                            <button
-                              onClick={() => handleToggleComments(diary.id)}
-                              className="text-dark-blue mt-2"
-                            >
-                              {showAllComments[diary.id]
-                                ? "收起留言"
-                                : `顯示所有 ${diaryComments[diary.id].length} 則留言`}
-                            </button>
-                          )}
-                        </ul>
-
                         {showCommentInput[diary.id] && (
-                          <div className="mt-2">
-                            <input
-                              type="text"
-                              placeholder="輸入留言..."
-                              value={commentTexts[diary.id] || ""}
-                              onChange={(e) => handleCommentTextChange(diary.id, e.target.value)}
-                              className="border p-2 w-full"
-                            />
-                            <button
-                              onClick={() => handleAddComment(diary.id)}
-                              className="mt-2 p-1 bg-amber-500 text-white rounded text-xs"
-                            >
-                              送出
-                            </button>
-                          </div>
+                          <CommentSection
+                            diaryId={diary.id}
+                            diaryOwnerId={diary.userId}
+                            currentUserId={auth.currentUser?.uid}
+                          />
                         )}
                       </li>
                     ))}
@@ -485,16 +414,16 @@ function Community() {
               </div>
             ) : (
               <p
-                className="mt-4
+                className="mt-4 lg:text-xl 
               "
               >
                 點擊右側選單選擇一位好友以查看他們的日記動態！
               </p>
             )}
-            {/* 錯誤訊息顯示 */}
+
             {error && <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">{error}</div>}
           </div>
-        </div>{" "}
+        </div>
       </div>
     </div>
   );
