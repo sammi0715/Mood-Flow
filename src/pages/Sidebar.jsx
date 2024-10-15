@@ -13,11 +13,17 @@ import { FaCircleUser } from "react-icons/fa6";
 function Sidebar({ isMenuOpen, setIsMenuOpen }) {
   const [userName, setUserName] = useState("");
   const [profileImage, setProfileImage] = useState("");
-  const userId = localStorage.getItem("user_uid");
   const navigate = useNavigate();
+
+  const userId = localStorage.getItem("user_uid") || auth.currentUser?.uid;
 
   useEffect(() => {
     const loadUserData = async () => {
+      if (!userId) {
+        console.error("無法獲取 userId，請先登入");
+        navigate("/");
+        return;
+      }
       try {
         const userData = await fetchUserData(userId);
         if (userData) {
