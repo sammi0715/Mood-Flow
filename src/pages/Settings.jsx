@@ -39,7 +39,6 @@ const ProfileSettings = () => {
     getUserData();
   }, [userId]);
 
-  // 處理圖片上傳
   const handleImageUpload = async (event) => {
     try {
       await firebaseHandleImageUpload(event, uploadedImages, setUploadedImages);
