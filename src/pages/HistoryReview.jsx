@@ -3,11 +3,11 @@ import { subMonths, format } from "date-fns";
 import { fetchHistoryData } from "../utills/firebase-data";
 import { useParams } from "react-router-dom";
 import { useSpotifyPlayer } from "../utills/SpotifyPlayerContext";
-import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import moodIcons from "../utills/moodIcons";
 import Sidebar from "../pages/Sidebar";
+import Alert from "../components/alert";
+import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import { TiThMenu } from "react-icons/ti";
-import Alert from "../utills/alert";
 
 const monthNamesInChinese = {
   January: "一月",
@@ -26,21 +26,33 @@ const monthNamesInChinese = {
 
 function HistoryReview() {
   const [historyData, setHistoryData] = useState([]);
-  const [selectedDate, setSelectedDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isFiltered, setIsFiltered] = useState(false);
-  const { userId } = useParams();
-  const { isPlaying, currentTrack, handlePlayPause, handleTrackSelect } = useSpotifyPlayer();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
+  const [selectedMood, setSelectedMood] = useState("全部");
+  const { userId } = useParams();
+  const { isPlaying, currentTrack, handlePlayPause, handleTrackSelect } = useSpotifyPlayer();
   const today = new Date();
   const monthInEnglish = format(subMonths(today, 1), "MMMM");
   const monthInChinese = monthNamesInChinese[monthInEnglish];
-
   const formattedMonth = `${monthInEnglish}  ${monthInChinese}`;
+
+  const moodOptions = [
+    "全部",
+    "開心",
+    "快樂",
+    "興奮",
+    "平靜",
+    "焦慮",
+    "生氣",
+    "憂鬱",
+    "悲傷",
+    "哭泣",
+  ];
 
   useEffect(() => {
     const loadDiaryForLastMonthSameDay = async () => {
@@ -63,7 +75,7 @@ function HistoryReview() {
     }
   }, [userId, today, isFiltered]);
 
-  const fetchFilteredData = async (startDate, endDate) => {
+  const fetchFilteredData = async (startDate, endDate, mood = "全部") => {
     if (!startDate || !endDate) {
       console.error("Start date or end date is undefined");
       return;
@@ -72,11 +84,16 @@ function HistoryReview() {
     try {
       setIsFiltered(true);
       setHistoryData([]);
-      const data = await fetchHistoryData(
+      let data = await fetchHistoryData(
         userId,
         format(startDate, "yyyy-MM-dd"),
         format(endDate, "yyyy-MM-dd")
       );
+
+      if (mood !== "全部") {
+        data = data.filter((diary) => diary.mood === mood);
+      }
+
       setHistoryData(data);
       setStartDate(startDate);
       setEndDate(endDate);
@@ -85,15 +102,21 @@ function HistoryReview() {
     }
   };
 
-  // 單日期篩選
-  const handleSingleDateFilter = async () => {
-    if (selectedDate) {
-      const date = new Date(selectedDate);
-      setIsFiltered(true);
-      fetchFilteredData(date, date);
-    } else {
-      alert("請選擇日期");
+  const filterByMood = (data, mood) => {
+    if (mood === "全部") return data;
+    return data.filter((diary) => diary.mood === mood);
+  };
+
+  const handleMoodFilterChange = (e) => {
+    const newMood = e.target.value;
+    setSelectedMood(newMood);
+
+    if (!startDate || !endDate) {
+      setAlertMessage("請先選擇日期篩選區間再篩選心情！");
+      return;
     }
+
+    fetchFilteredData(startDate, endDate, newMood);
   };
 
   const handleDateRangeFilter = () => {
@@ -110,12 +133,11 @@ function HistoryReview() {
       return;
     }
 
-    // 開始篩選資料
     setIsFiltered(true);
-    fetchFilteredData(start, end);
+
+    fetchFilteredData(start, end, selectedMood);
   };
 
-  //固定區間
   const handleFilterChange = async (e) => {
     const today = new Date();
     let startDate;
@@ -157,9 +179,9 @@ function HistoryReview() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen lg:p-8">
       <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-      <div className="flex-grow p-8">
+      <div className=" p-4 md:p-8">
         <div className="flex items-center mb-6">
           <TiThMenu
             className="w-6 h-6 lg:h-8 lg:w-8 mr-4 cursor-pointer text-gray-600 hover:text-gray-800"
@@ -168,17 +190,16 @@ function HistoryReview() {
           <h1 className="text-2xl sm:text-3xl">歷史回顧</h1>
         </div>
 
-        {/* 日期與區間篩選器 */}
-        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 max-w-5xl mx-auto">
+        <div className="mb-6 grid sm:grid-cols-2 gap-4 sm:gap-8 max-w-5xl mx-auto">
           <div className="flex flex-col">
             <label className="mb-2 text-sm sm:text-base">篩選日期區間：</label>
-            <div className="flex">
+            <div className="flex  sm:items-center ">
               <input
                 type="date"
                 value={startDate ? format(new Date(startDate), "yyyy-MM-dd") : ""}
                 onChange={(e) => setStartDate(e.target.value)}
                 max={format(new Date(), "yyyy-MM-dd")}
-                className="border p-2 mr-2 rounded-lg"
+                className="border p-2 mr-2 rounded-lg "
               />
 
               <input
@@ -186,11 +207,11 @@ function HistoryReview() {
                 value={endDate ? format(new Date(endDate), "yyyy-MM-dd") : ""}
                 onChange={(e) => setEndDate(e.target.value)}
                 max={format(new Date(), "yyyy-MM-dd")}
-                className="border p-2 rounded-lg"
+                className="border p-2 rounded-lg "
               />
             </div>
             <button
-              className="bg-light-blue-dark lg:w-[300px] text-white px-4 py-2 rounded-lg mt-4 hover:bg-amber-300 transition"
+              className="bg-light-blue-dark w-[full] sm:w-auto text-white px-4 py-2 rounded-lg mt-4 hover:bg-amber-300 transition"
               onClick={handleDateRangeFilter}
             >
               篩選區間
@@ -206,9 +227,22 @@ function HistoryReview() {
               <option value="lastYear">去年</option>
             </select>
           </div>
-        </div>
 
-        <h1 className="text-2xl sm:text-3xl mb-6">
+          <div className="flex flex-col sm:col-span-2">
+            <label className="mb-2 text-sm sm:text-base">篩選心情：</label>
+            <select className="border p-2 rounded-lg " onChange={handleMoodFilterChange}>
+              {moodOptions.map((mood) => (
+                <option key={mood} value={mood}>
+                  {mood}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4">
+        <h1 className="text-xl sm:text-3xl mb-6 ">
           {isFiltered
             ? `回顧內容 (${
                 startDate && !isNaN(new Date(startDate))
@@ -221,80 +255,84 @@ function HistoryReview() {
             : `上個月的今天:  ${formattedMonth}/${format(today, "dd")}`}
         </h1>
 
-        {/* 日記顯示區域 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 lg:flex lg:flex-col min-h[200px] lg:items-center">
           {historyData.length > 0 ? (
-            historyData.map((diary, index) => (
-              <div
-                key={index}
-                className="border rounded-lg p-4 bg-white shadow-lg flex flex-col lg:flex-row lg:w-10/12"
-              >
-                {/* 左側心情圖標與文字 */}
-                <div className="flex flex-col lg:flex-row flex-grow lg:w-2/3 ">
-                  {/* 心情圖標 */}
-                  <div className="flex items-start mr-4 flex-shrink-0">
-                    <img
-                      src={moodIcons[diary.mood]}
-                      className="w-12 h-12 lg:w-16 lg:h-16 rounded-full"
-                      alt="Mood"
-                    />
-                  </div>
-                  {/* 日期與日記內容 */}
-                  <div className="flex flex-col">
-                    <h3 className="text-lg sm:text-xl mb-2">
-                      {diary.date ? format(new Date(diary.date), "yyyy-MM-dd") : "無有效日期"}
-                    </h3>
-                    <p className="mb-4 text-base lg:text-xl">{diary.content}</p>
-                    {/* 音樂區域 */}
-                    {diary.track && (
-                      <div className="mt-2">
-                        <h4 className="text-lg mb-2">音樂：</h4>
-                        <div className="p-4 xl:w-[480px] sm:w-[300px] flex items-center space-x-4 bg-gray-100 rounded-lg shadow-md sm:mb-2">
-                          <img
-                            src={diary.track.albumImageUrl}
-                            alt={diary.track.name}
-                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full"
-                          />
-                          <div className="flex-1 text-sm sm:text-base">
-                            <p>{diary.track.name}</p>
-                            <p>{diary.track.artists.join(", ")}</p>
+            filterByMood(historyData, selectedMood).length > 0 ? (
+              filterByMood(historyData, selectedMood).map((diary, index) => (
+                <div
+                  key={index}
+                  className="border rounded-lg p-4 bg-white shadow-lg flex flex-col lg:flex-row lg:w-10/12 items-center"
+                >
+                  <div className="flex flex-col lg:flex-row flex-grow lg:w-2/3 ">
+                    <div className="flex items-start mr-4 flex-shrink-0">
+                      <img
+                        src={moodIcons[diary.mood]}
+                        className="w-12 h-12 lg:w-16 lg:h-16 rounded-full"
+                        alt="Mood"
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <h3 className="text-lg sm:text-xl mb-2">
+                        {diary.date ? format(new Date(diary.date), "yyyy-MM-dd") : "無有效日期"}
+                      </h3>
+                      <p className="mb-4 text-base lg:text-xl">{diary.content}</p>
+
+                      {diary.track && (
+                        <div className="mt-2">
+                          <h4 className="text-lg mb-2">音樂：</h4>
+                          <div className="p-4 xl:w-[480px] sm:w-[300px] flex items-center space-x-4 bg-gray-100 rounded-lg shadow-md sm:mb-2">
+                            <img
+                              src={diary.track.albumImageUrl}
+                              alt={diary.track.name}
+                              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full"
+                            />
+                            <div className="flex-1 text-sm sm:text-base">
+                              <p>{diary.track.name}</p>
+                              <p>{diary.track.artists.join(", ")}</p>
+                            </div>
+
+                            <button
+                              onClick={() => handlePlayTrack(diary.track)}
+                              className="text-green-500"
+                            >
+                              {isPlaying && currentTrack?.uri === diary.track.uri ? (
+                                <IoPauseCircle size={32} />
+                              ) : (
+                                <IoPlayCircle size={32} />
+                              )}
+                            </button>
                           </div>
-
-                          <button
-                            onClick={() => handlePlayTrack(diary.track)}
-                            className="text-green-500"
-                          >
-                            {isPlaying && currentTrack?.uri === diary.track.uri ? (
-                              <IoPauseCircle size={32} />
-                            ) : (
-                              <IoPlayCircle size={32} />
-                            )}
-                          </button>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* 右側圖片區域 */}
-                {diary.imageUrls?.[0] && (
-                  <div className="w-full h-40 lg:w-48 lg:h-48 overflow-hidden rounded-lg lg:ml-4">
-                    <img
-                      src={diary.imageUrls?.[0]}
-                      alt="Diary"
-                      className="w-full h-full object-cover"
-                      onClick={() => handleImageClick(diary.imageUrls[0])}
-                    />
-                  </div>
-                )}
-              </div>
-            ))
+                  {diary.imageUrls?.[0] && (
+                    <div className="w-full h-40 lg:w-48 lg:h-48 overflow-hidden rounded-lg lg:ml-4">
+                      <img
+                        src={diary.imageUrls?.[0]}
+                        alt="Diary"
+                        className="w-full h-full object-cover"
+                        onClick={() => handleImageClick(diary.imageUrls[0])}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="col-span-full text-center text-black lg:mt-24">
+                目前沒有符合篩選條件的日記記錄。
+              </p>
+            )
           ) : (
-            <p className="col-span-full text-center">目前沒有日記記錄。</p>
+            <p className="col-span-full text-center text-black lg:mt-24 lg:text-lg">
+              目前沒有日記記錄 !! 趕快去新增日記吧！
+            </p>
           )}
         </div>
       </div>
-      {/* 圖片預覽模態框 */}
+
       {previewImage && (
         <div
           className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center"
