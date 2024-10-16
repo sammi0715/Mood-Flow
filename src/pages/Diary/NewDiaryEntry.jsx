@@ -19,7 +19,6 @@ import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
 import { auth, db } from "../../utils/firebase";
 import { handleImageUpload, simplifyTrack } from "../../utils/firebase-data";
 import Sidebar from "../Sidebar";
-
 const initialState = {
   selectedMood: null,
   diaryContent: "",
@@ -135,9 +134,12 @@ function NewDiaryEntry() {
         type: "SET_ALERT",
         payload: {
           message: "日記已成功保存！",
-          confirm: () => navigate(`/diary-calendar/${user.uid}`),
+          confirm: () => {},
         },
       });
+      setTimeout(() => {
+        navigate(`/diary-calendar/${user.uid}`);
+      }, 1000);
     } catch (error) {
       console.error("保存日記時出錯: ", error);
       dispatch({ type: "SET_ALERT", payload: { message: "保存日記時出錯，請稍後再試。" } });
