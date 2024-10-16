@@ -41,7 +41,11 @@ const ProfileSettings = () => {
 
   const handleImageUpload = async (event) => {
     try {
-      await firebaseHandleImageUpload(event, uploadedImages, setUploadedImages);
+      setUploadedImages([]);
+
+      await firebaseHandleImageUpload(event, [], (newImageUrl) => {
+        setUploadedImages([newImageUrl]);
+      });
     } catch (error) {
       console.error("圖片上傳失敗：", error);
       setAlertMessage("圖片上傳失敗，請稍後再試。");
