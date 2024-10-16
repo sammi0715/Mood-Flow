@@ -280,6 +280,14 @@ function ViewDiaryEntry() {
   };
 
   const handleImageUploadWrapper = async (event) => {
+    const totalImages = state.updatedImages.length + state.uploadedImages.length;
+    const files = Array.from(event.target.files);
+
+    if (totalImages + files.length > 3) {
+      dispatch({ type: "SET_ALERT", payload: { message: "總共最多只能上傳三張圖片。" } });
+      return;
+    }
+
     try {
       await handleImageUpload(event, state.uploadedImages, (newImageUrl) => {
         dispatch({ type: "ADD_IMAGE", payload: newImageUrl });
@@ -288,6 +296,7 @@ function ViewDiaryEntry() {
       dispatch({ type: "SET_ALERT", payload: { message: error.message } });
     }
   };
+
   const handleRemoveImageWrapper = (index) => {
     dispatch({ type: "REMOVE_IMAGE", payload: index });
   };
