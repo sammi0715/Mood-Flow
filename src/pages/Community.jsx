@@ -303,7 +303,7 @@ function Community() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleAcceptFriendRequest(request)}
-                        className="ml-2 md:ml-4 p-1 text-xs lg:text-base bg-dark-orange text-white rounded "
+                        className="ml-2 md:ml-4 p-1 text-xs lg:text-base bg-dark-orange hover:bg-amber-500 text-white rounded "
                       >
                         接受
                       </button>
@@ -311,7 +311,7 @@ function Community() {
                         onClick={() => handleRejectFriendRequest(request.id)}
                         className="text-white rounded items-center"
                       >
-                        <IoCloseCircle className="w-7 h-7 text-pink-orange ml-4" />
+                        <IoCloseCircle className="w-7 h-7 text-pink-orange hover:text-red-400 ml-4" />
                       </button>
                     </div>
                   </li>
