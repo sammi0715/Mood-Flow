@@ -117,7 +117,7 @@ export const SpotifyTracks = ({
             搜尋
           </button>
         </div>
-        {/* Search Results Section */}
+
         <div>
           <h2 className="text-2xl mb-4">搜尋結果：</h2>
           <div className="space-y-4">
@@ -172,7 +172,7 @@ export const SpotifyTracks = ({
                 />
                 <div className="flex-1">
                   <p className="text-sm lg:text-xl">{track.name}</p>
-                  <p className="text-xs text-gray-400">{track.artists[0].name}</p>
+                  <p className="text-sm lg:text-lg text-gray-400">{track.artists[0].name}</p>
                 </div>
                 <button onClick={() => handlePlayTrack(track)}>
                   {currentTrack?.id === track.id && isPlaying ? (
