@@ -142,14 +142,6 @@ function Header() {
     }
   }, [state.isSearchOpen]);
 
-  const toggleSearch = () => {
-    dispatch({ type: "TOGGLE_SEARCH" });
-  };
-
-  const toggleNotifications = () => {
-    dispatch({ type: "TOGGLE_NOTIFICATIONS" });
-  };
-
   const handleNotificationClick = async (notification) => {
     try {
       if (notification.type === "comment") {
@@ -234,7 +226,7 @@ function Header() {
               onClick={() => dispatch({ type: "TOGGLE_NOTIFICATIONS" })}
             >
               <RiNotification4Fill className="h-6 w-6 lg:h-8 lg:w-8" />
-              {/* 如果有未讀通知，顯示紅點 */}
+
               {state.notifications.some((notification) => !notification.isRead) && (
                 <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full"></span>
               )}
@@ -288,7 +280,6 @@ function Header() {
               搜尋
             </button>
 
-            {/* 顯示搜尋結果 */}
             {state.searchResults.length > 0 && (
               <ul className="mt-2">
                 {state.searchResults.map((result) => {
