@@ -1,5 +1,5 @@
-import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../utils/firebase";
 
 
@@ -44,7 +44,7 @@ export const signInWithGoogle = async () => {
     }
 };
 
-//註冊邏輯
+
 export const signUpUser = async (name, email, password, profile_pic) => {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);

@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { FaUser, FaHistory } from "react-icons/fa";
-import { TiChartBar } from "react-icons/ti";
-import { IoClose } from "react-icons/io5";
-import { IoIosSettings } from "react-icons/io";
-import { fetchUserData } from "../utils/firebase-data";
-import { Link, useNavigate } from "react-router-dom";
-import { BiLogOutCircle } from "react-icons/bi";
 import { signOut } from "firebase/auth";
-import { auth } from "../utils/firebase";
+import React, { useEffect, useState } from "react";
+import { BiLogOutCircle } from "react-icons/bi";
+import { FaHistory, FaUser } from "react-icons/fa";
 import { FaCircleUser } from "react-icons/fa6";
+import { IoIosSettings } from "react-icons/io";
+import { IoClose } from "react-icons/io5";
+import { TiChartBar } from "react-icons/ti";
+import { Link, useNavigate } from "react-router-dom";
+import { auth } from "../utils/firebase";
+import { fetchUserData } from "../utils/firebase-data";
 
 function Sidebar({ isMenuOpen, setIsMenuOpen }) {
   const [userName, setUserName] = useState("");

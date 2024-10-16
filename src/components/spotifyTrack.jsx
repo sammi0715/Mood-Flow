@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
-import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
-import { useSpotifyPlayer } from "../utils/SpotifyPlayerContext";
-import { LuPlusCircle, LuCheckCircle } from "react-icons/lu";
+import { useEffect, useState } from "react";
 import { FiLoader, FiPlusCircle } from "react-icons/fi";
+import { IoPauseCircle, IoPlayCircle } from "react-icons/io5";
+import { LuCheckCircle, LuPlusCircle } from "react-icons/lu";
+import { useSpotifyPlayer } from "../utils/SpotifyPlayerContext";
 
-import { FaAngleDown } from "react-icons/fa6";
 import Alert from "./alert";
 export const SpotifyTracks = ({
   onSelectTrackForDiary,

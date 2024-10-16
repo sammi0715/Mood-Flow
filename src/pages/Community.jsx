@@ -1,31 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import {
-  fetchFriends,
-  acceptFriendRequest,
-  deleteFriendRequest,
-  fetchDiariesWithPermission,
-  fetchUserData,
-  listenToFriends,
-  listenToFriendRequests,
-  listenToComments,
-  toggleLikeDiary,
-  deleteFriend,
-} from "../utils/firebase-data";
-import moodIcons from "../utils/moodIcons";
-import { auth, doc, onSnapshot } from "../utils/firebase";
-import { db } from "../utils/firebase";
-import Sidebar from "../pages/Sidebar";
-import Alert from "../components/alert";
-import Confirm from "../components/confirm";
-import LikeTooltip from "../components/LikeTooltip";
+import React, { useEffect, useState } from "react";
 import { FaRegComment, FaSearch } from "react-icons/fa";
-import { IoIosClose, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import { IoIosArrowBack, IoIosArrowForward, IoIosClose } from "react-icons/io";
 import { IoCloseCircle } from "react-icons/io5";
 import { RiUser5Fill } from "react-icons/ri";
 import { TiThMenu } from "react-icons/ti";
-import CommentSection from "../components/CommentSection";
+import { useParams } from "react-router-dom";
 import Music from "../assets/images/music-note.png";
+import CommentSection from "../components/CommentSection";
+import LikeTooltip from "../components/LikeTooltip";
+import Alert from "../components/alert";
+import Confirm from "../components/confirm";
+import Sidebar from "../pages/Sidebar";
+import { auth, db, doc, onSnapshot } from "../utils/firebase";
+import {
+  acceptFriendRequest,
+  deleteFriend,
+  deleteFriendRequest,
+  fetchDiariesWithPermission,
+  fetchFriends,
+  fetchUserData,
+  listenToComments,
+  listenToFriendRequests,
+  listenToFriends,
+  toggleLikeDiary,
+} from "../utils/firebase-data";
+import moodIcons from "../utils/moodIcons";
 function Community() {
   const [friends, setFriends] = useState([]);
   const [isFriendsListOpen, setIsFriendsListOpen] = useState(false);

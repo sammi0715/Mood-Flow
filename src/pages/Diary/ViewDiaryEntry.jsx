@@ -1,27 +1,27 @@
-import React, { useEffect, useReducer } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import { db } from "../../utils/firebase";
-import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
-import { TiThMenu } from "react-icons/ti";
+import React, { useEffect, useReducer } from "react";
 import { FaRegComment, FaSpotify } from "react-icons/fa";
-import { IoMdCloseCircle } from "react-icons/io";
 import { FiLoader } from "react-icons/fi";
-import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
-import moodIcons from "../../utils/moodIcons";
-import Alert from "../../components/alert";
-import LikeTooltip from "../../components/LikeTooltip";
-import { SpotifyTracks } from "../../components/spotifyTrack";
-import Sidebar from "../Sidebar";
+import { IoMdCloseCircle } from "react-icons/io";
+import { IoPauseCircle, IoPlayCircle } from "react-icons/io5";
+import { TiThMenu } from "react-icons/ti";
+import { useNavigate, useParams } from "react-router-dom";
 import CommentSection from "../../components/CommentSection";
+import LikeTooltip from "../../components/LikeTooltip";
+import Alert from "../../components/alert";
+import { SpotifyTracks } from "../../components/spotifyTrack";
+import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
+import { db } from "../../utils/firebase";
 import {
-  updateDiary,
   deleteDiary,
-  simplifyTrack,
   handleImageUpload,
   listenToComments,
+  simplifyTrack,
   toggleLikeDiary,
+  updateDiary,
 } from "../../utils/firebase-data";
+import moodIcons from "../../utils/moodIcons";
+import Sidebar from "../Sidebar";
 
 const initialState = {
   diary: null,

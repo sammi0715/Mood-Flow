@@ -1,19 +1,19 @@
-import React, { useReducer, useEffect, useRef } from "react";
-import logo from "../assets/images/logo-3.png";
-import { FaSearch } from "react-icons/fa";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { auth } from "../utils/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import React, { useEffect, useReducer, useRef } from "react";
+import { FaSearch } from "react-icons/fa";
 import { RiNotification4Fill } from "react-icons/ri";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import logo from "../assets/images/logo-3.png";
+import Alert from "../components/alert";
+import { auth } from "../utils/firebase";
 import {
+  listenToFriendRequests,
+  listenToFriends,
+  listenToNotifications,
+  markRequestAsRead,
   searchUserByName,
   sendFriendRequest,
-  listenToFriends,
-  listenToFriendRequests,
-  markRequestAsRead,
-  listenToNotifications,
 } from "../utils/firebase-data";
-import Alert from "../components/alert";
 
 const initialState = {
   user: null,

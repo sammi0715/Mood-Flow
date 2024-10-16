@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { IoClose } from "react-icons/io5";
-import { FaCircleUser, FaCirclePlus } from "react-icons/fa6";
-import { FcGoogle } from "react-icons/fc";
-import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
-import { signUpUser, loginUser, signInWithGoogle, handleSetUsername } from "../utils/auth";
-import { auth, db } from "../utils/firebase";
-import Alert from "../components/alert";
-import moodIcons from "../utils/moodIcons";
-import logo from "../assets/images/logo-1.png";
-import gsap from "gsap";
 import { doc, getDoc } from "firebase/firestore";
+import gsap from "gsap";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { FaCirclePlus, FaCircleUser } from "react-icons/fa6";
+import { FcGoogle } from "react-icons/fc";
+import { IoClose } from "react-icons/io5";
+import { useNavigate } from "react-router-dom";
+import logo from "../assets/images/logo-1.png";
+import Alert from "../components/alert";
+import { handleSetUsername, loginUser, signInWithGoogle, signUpUser } from "../utils/auth";
+import { auth, db } from "../utils/firebase";
+import moodIcons from "../utils/moodIcons";
 
 function Home() {
   const [showLogin, setShowLogin] = useState(false);

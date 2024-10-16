@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
 import { FaSpotify } from "react-icons/fa";
 import { FiLoader } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
 function SpotifyCallback() {
   const navigate = useNavigate();
   const { exchangeToken } = useSpotifyPlayer();

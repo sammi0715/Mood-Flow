@@ -1,24 +1,24 @@
-import React, { useReducer, useState } from "react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import React, { useReducer } from "react";
+import { FaSpotify } from "react-icons/fa";
+import { IoMdCloseCircle } from "react-icons/io";
 import { TiThMenu } from "react-icons/ti";
+import { useLocation, useNavigate } from "react-router-dom";
+import angry from "../../assets/images/angry.png";
+import anxiety from "../../assets/images/anxiety.png";
+import blue from "../../assets/images/blue.png";
+import calm from "../../assets/images/calm.png";
+import cry from "../../assets/images/cry.png";
+import excited from "../../assets/images/excited.png";
 import happy from "../../assets/images/happy.png";
 import joy from "../../assets/images/joy.png";
-import excited from "../../assets/images/excited.png";
-import calm from "../../assets/images/calm.png";
-import anxiety from "../../assets/images/anxiety.png";
-import angry from "../../assets/images/angry.png";
-import blue from "../../assets/images/blue.png";
 import sad from "../../assets/images/sad.png";
-import cry from "../../assets/images/cry.png";
-import { useLocation, useNavigate } from "react-router-dom";
-import { auth, db } from "../../utils/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { IoMdCloseCircle } from "react-icons/io";
-import { FaSpotify } from "react-icons/fa";
-import { simplifyTrack, handleImageUpload } from "../../utils/firebase-data";
+import Alert from "../../components/alert";
 import { SpotifyTracks } from "../../components/spotifyTrack";
 import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
+import { auth, db } from "../../utils/firebase";
+import { handleImageUpload, simplifyTrack } from "../../utils/firebase-data";
 import Sidebar from "../Sidebar";
-import Alert from "../../components/alert";
 
 const initialState = {
   selectedMood: null,

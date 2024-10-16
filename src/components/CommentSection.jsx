@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { FaCircleUser } from "react-icons/fa6";
 import {
   addCommentAndNotify,
   addReplyAndNotify,
+  fetchUserData,
   listenToComments,
   listenToReplies,
-  fetchUserData,
 } from "../utils/firebase-data";
-import { FaCircleUser } from "react-icons/fa6";
 import Alert from "./alert";
 
 function CommentSection({ diaryId, diaryOwnerId, currentUserId }) {

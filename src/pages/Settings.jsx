@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { FaCircleUser } from "react-icons/fa6";
+import { useParams } from "react-router-dom";
+import Alert from "../components/alert";
 import {
   fetchUserData,
-  updateUserData,
   handleImageUpload as firebaseHandleImageUpload,
-  updateFriendName,
   getFriendIds,
+  updateFriendName,
+  updateUserData,
 } from "../utils/firebase-data";
-import Alert from "../components/alert";
-import { useParams } from "react-router-dom";
-import { FaCircleUser } from "react-icons/fa6";
 const ProfileSettings = () => {
   const { userId } = useParams();
 

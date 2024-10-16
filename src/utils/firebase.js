@@ -1,7 +1,7 @@
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, setDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs, getDoc, where, deleteDoc, updateDoc, } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_APP_FIREBASE_API_KEY,
@@ -14,9 +14,9 @@ const firebaseConfig = {
 };
 
 
-// Initialize Firebase
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
-export { db, auth, collection, addDoc, setDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs, getDoc, where, deleteDoc, updateDoc, storage, getStorage }
+export { addDoc, auth, collection, db, deleteDoc, doc, getDoc, getDocs, getStorage, onSnapshot, orderBy, query, serverTimestamp, setDoc, storage, updateDoc, where };

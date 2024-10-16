@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { fetchDiaries, fetchUserData } from "../../utils/firebase-data";
-import { TiThMenu } from "react-icons/ti";
+import React, { useEffect, useRef, useState } from "react";
 import { FaSpotify } from "react-icons/fa";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { TiThMenu } from "react-icons/ti";
+import { useNavigate, useParams } from "react-router-dom";
+import Alert from "../../components/alert";
 import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
+import { fetchDiaries } from "../../utils/firebase-data";
 import moodIcons from "../../utils/moodIcons";
 import Sidebar from "../Sidebar";
-import Alert from "../../components/alert";
 
 import {
-  format,
-  addMonths,
-  subMonths,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  isSameMonth,
-  isSameDay,
   addDays,
+  addMonths,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
 } from "date-fns";
 import pencil from "../../assets/images/pencil.png";
 
