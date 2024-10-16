@@ -118,7 +118,11 @@ function Home() {
         navigate(`/diary-calendar/${user.uid}`);
       }, 2000);
     } catch (error) {
-      setAlertMessage(error.message);
+      if (error.code === "auth/invalid-credential") {
+        setAlertMessage("請檢查電子信箱或密碼是否正確。");
+      } else {
+        setAlertMessage("登入失敗，請稍後再試。");
+      }
     }
   };
 
@@ -137,7 +141,7 @@ function Home() {
         }, 2000);
       }
     } catch (error) {
-      setAlertMessage("Google 登入失敗: " + error.message);
+      setAlertMessage("Google 登入失敗，請稍後再試。");
     }
   };
 
@@ -244,7 +248,10 @@ function Home() {
                 <label>密碼</label>
                 <input
                   type="password"
-                  {...loginRegister("password", { required: "請輸入密碼" })}
+                  {...loginRegister("password", {
+                    required: "請輸入密碼",
+                    minLength: { value: 6, message: "密碼至少需6個字元" },
+                  })}
                   placeholder="密碼"
                   className="border border-gray-300 p-2 w-full rounded"
                 />
