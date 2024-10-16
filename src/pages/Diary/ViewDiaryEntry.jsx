@@ -498,7 +498,7 @@ function ViewDiaryEntry() {
             )}
           </div>
         ) : (
-          <div className="max-w-5xl mx-auto mt-16 bg-light-beige bg-opacity-75 border-1 border border-gray-900 p-8 rounded-lg">
+          <div className="max-w-5xl mx-auto mt-16 bg-light-beige bg-opacity-75 border-1 border border-gray-900 p-4 md:p-8 rounded-lg">
             <div className="flex items-center mb-4">
               <img
                 src={moodIcons[state.diary.mood]}
@@ -529,10 +529,10 @@ function ViewDiaryEntry() {
                   <img
                     src={state.diary.track.albumImageUrl}
                     alt={state.diary.track.name}
-                    className="w-20 h-20 md:w-24 md:h-24 rounded-full"
+                    className="w-12 h-12 md:w-24 md:h-24 rounded-full"
                   />
                   <div className="flex-1">
-                    <p className="text-base md:text-xl">{state.diary.track.name}</p>
+                    <p className="text-xs md:text-xl">{state.diary.track.name}</p>
                     <p className="text-sm text-gray-400">{state.diary.track.artists.join(", ")} </p>
                   </div>
 
