@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import CommentSection from "../../components/CommentSection";
 import LikeTooltip from "../../components/LikeTooltip";
 import Alert from "../../components/alert";
+import ConfirmDialog from "../../components/confirm";
 import { SpotifyTracks } from "../../components/spotifyTrack";
 import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
 import { db } from "../../utils/firebase";
@@ -35,6 +36,8 @@ const initialState = {
   isMenuOpen: false,
   alertMessage: null,
   alertConfirm: null,
+  showConfirmDialog: false,
+  confirmMessage: "",
   likes: [],
   comments: [],
   showCommentInput: {},
@@ -87,6 +90,13 @@ function diaryReducer(state, action) {
         ...state,
         alertMessage: action.payload.message,
         alertConfirm: action.payload.confirm,
+      };
+    case "SET_CONFIRM_DIALOG":
+      return {
+        ...state,
+        showConfirmDialog: action.payload.show,
+        confirmMessage: action.payload.message,
+        confirmAction: action.payload.action,
       };
     case "CLEAR_ALERT":
       return { ...state, alertMessage: null, alertConfirm: null };
@@ -225,10 +235,12 @@ function ViewDiaryEntry() {
           message: "日記更新成功！",
           confirm: () => {
             dispatch({ type: "SET_EDITING", payload: false });
-            navigate(`/diary-calendar/${userId}`);
           },
         },
       });
+      setTimeout(() => {
+        navigate(`/diary-calendar/${userId}`);
+      }, 1000);
     } catch (error) {
       console.error("Error updating diary: ", error);
       dispatch({ type: "SET_ALERT", payload: { message: "更新日記時出錯，請稍後再試" } });
@@ -236,19 +248,35 @@ function ViewDiaryEntry() {
   };
 
   const handleDelete = async () => {
-    try {
-      await deleteDiary(diaryId);
-      dispatch({
-        type: "SET_ALERT",
-        payload: {
-          message: "日記刪除成功！",
-          confirm: () => navigate(`/diary-calendar/${userId}`),
+    dispatch({
+      type: "SET_CONFIRM_DIALOG",
+      payload: {
+        show: true,
+        message: "確定刪除該則日記嗎？",
+        action: async () => {
+          try {
+            await deleteDiary(diaryId);
+            dispatch({
+              type: "SET_ALERT",
+              payload: {
+                message: "日記刪除成功！",
+              },
+            });
+
+            setTimeout(() => {
+              navigate(`/diary-calendar/${userId}`);
+            }, 1000);
+          } catch (error) {
+            console.error("Error deleting diary: ", error);
+            dispatch({ type: "SET_ALERT", payload: { message: "刪除日記時出錯，請稍後再試。" } });
+          }
+          dispatch({
+            type: "SET_CONFIRM_DIALOG",
+            payload: { show: false, message: "", action: null },
+          });
         },
-      });
-    } catch (error) {
-      console.error("Error deleting diary: ", error);
-      dispatch({ type: "SET_ALERT", payload: { message: "刪除日記時出錯，請稍後再試。" } });
-    }
+      },
+    });
   };
 
   const handleImageUploadWrapper = async (event) => {
@@ -266,6 +294,10 @@ function ViewDiaryEntry() {
 
   const handleToggleCommentInput = (diaryId) => {
     dispatch({ type: "TOGGLE_COMMENT_INPUT", payload: diaryId });
+  };
+
+  const handleConfirmDialogCancel = () => {
+    dispatch({ type: "SET_CONFIRM_DIALOG", payload: { show: false, message: "", action: null } });
   };
 
   if (state.loading) {
@@ -522,6 +554,13 @@ function ViewDiaryEntry() {
             message={state.alertMessage}
             onClose={() => dispatch({ type: "CLEAR_ALERT" })}
             onConfirm={state.alertConfirm}
+          />
+        )}
+        {state.showConfirmDialog && (
+          <ConfirmDialog
+            message={state.confirmMessage}
+            onConfirm={state.confirmAction}
+            onCancel={handleConfirmDialogCancel}
           />
         )}
         <div className="likes-comments-section mt-8 max-w-5xl mx-auto">
