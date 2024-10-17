@@ -179,7 +179,7 @@ function HistoryReview() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen lg:p-8">
+    <div className="flex flex-col min-h-screen">
       <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
       <div className=" p-4 md:p-8">
         <div className="flex items-center mb-6">
@@ -241,7 +241,7 @@ function HistoryReview() {
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="p-4 lg:p-8">
         <h1 className="text-xl sm:text-3xl mb-6 ">
           {isFiltered
             ? `回顧內容 (${
