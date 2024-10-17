@@ -326,7 +326,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
 
   return (
     <SpotifyPlayerContext.Provider value={contextValue}>
-      {children}{" "}
+      {children}
       {alertMessage && <Alert message={alertMessage} onClose={() => setAlertMessage(null)} />}
     </SpotifyPlayerContext.Provider>
   );
