@@ -1,4 +1,4 @@
-# 心情日記專案
+# 心情日記 Mood Flow 專案
 
 ![React](https://img.shields.io/badge/React-v18.3.1-blue) ![Firebase](https://img.shields.io/badge/Firebase-v10.13.1-orange)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v3.4.11-blue)![Spotify API](https://img.shields.io/badge/Spotify-API-green)
