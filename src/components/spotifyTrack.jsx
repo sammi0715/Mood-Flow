@@ -73,7 +73,7 @@ export const SpotifyTracks = ({
     setSelectedTracks({
       [track.id]: true,
     });
-    console.log(`已選取歌曲: ${track.name}`);
+
     onSelectTrackForDiary(track);
   };
 

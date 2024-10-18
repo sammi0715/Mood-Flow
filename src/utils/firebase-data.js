@@ -1,7 +1,7 @@
-import { db, storage, auth } from "./firebase";
-import { collection, getDocs, addDoc, query, where, serverTimestamp, updateDoc, deleteDoc, getDoc, doc, orderBy, onSnapshot, writeBatch } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { format } from "date-fns";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where, writeBatch } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { auth, db, storage } from "./firebase";
 
 export const fetchDiaries = async (userId) => {
     try {
@@ -43,7 +43,7 @@ export const saveDiaryEntry = async (diaryEntry) => {
             content,
             createdAt: serverTimestamp(),
         });
-        console.log("日記保存成功！");
+
     } catch (error) {
         console.error("Error adding document: ", error);
         throw error;
@@ -77,7 +77,7 @@ export const updateDiary = async (diaryId, updatedData) => {
             updatedAt: serverTimestamp(),
         });
 
-        console.log("日記更新成功！");
+
     } catch (error) {
         console.error("更新日記錯誤:", error);
         throw error;
@@ -89,7 +89,7 @@ export const deleteDiary = async (diaryId) => {
     try {
         const diaryRef = doc(db, "diaries", diaryId);
         await deleteDoc(diaryRef);
-        console.log("日記刪除成功！")
+
     } catch (error) {
         console.error("Error deleting diary:", error);
         throw error;
@@ -190,7 +190,7 @@ export const handleImageUpload = async (event, currentImages, onImageUpload) => 
             "state_changed",
             (snapshot) => {
                 const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                console.log(`Upload is ${progress}% done`);
+
             },
             (error) => {
                 console.error("圖片上傳失敗: ", error);
@@ -364,7 +364,7 @@ export const sendFriendRequest = async (senderId, targetUser) => {
             createdAt: serverTimestamp(),
             isRead: false,
         });
-        console.log("好友邀請已發送！");
+
     } catch (error) {
         console.error("發送好友邀請失敗：", error);
         throw error;
@@ -423,7 +423,7 @@ export const acceptFriendRequest = async (senderId, receiverId) => {
         });
         await batch.commit();
 
-        console.log("雙方已成為好友！");
+
 
     } catch (error) {
         console.error("接受好友邀請時錯誤：", error);
@@ -435,7 +435,7 @@ export const deleteFriendRequest = async (userId, requestId) => {
     try {
         const requestRef = doc(db, `users/${userId}/friend_requests/${requestId}`);
         await deleteDoc(requestRef);
-        console.log("好友邀請已刪除！");
+
     } catch (error) {
         console.error("刪除好友邀請失敗：", error);
         throw error;
@@ -488,7 +488,6 @@ export const deleteFriend = async (currentUserId, friendId) => {
         batch.delete(friendUserRef);
 
         await batch.commit();
-        console.log(`成功刪除好友 ${friendId}`);
     } catch (error) {
         console.error("刪除好友時發生錯誤:", error);
         throw error;
@@ -516,7 +515,6 @@ export const updateFriendName = async (userId, friendId, newName) => {
     try {
         const friendRef = doc(db, "users", userId, "friends", friendId);
         await updateDoc(friendRef, { name: newName });
-        console.log("好友名稱更新成功！");
     } catch (error) {
         console.error("更新好友名稱時出錯: ", error);
     }
@@ -541,7 +539,7 @@ export const markRequestAsRead = async (notificationId) => {
     try {
         const notificationRef = doc(db, `notifications/${notificationId}`);
         await updateDoc(notificationRef, { isRead: true });
-        console.log("通知已標記為已讀");
+
     } catch (error) {
         console.error("標記通知為已讀時發生錯誤:", error);
     }
@@ -658,7 +656,7 @@ export const listenToReplies = (diaryId, commentId, callback) => {
             id: doc.id,
             ...doc.data(),
         }));
-        console.log("回覆變更:", replies);
+
         callback(replies);
     }, (error) => {
         console.error(`監聽回覆 (留言 ID: ${commentId}) 時發生錯誤: `, error);
@@ -702,7 +700,6 @@ export const toggleLikeDiary = async (diaryId, currentLikes) => {
         }
 
         await updateDoc(diaryRef, { likes: updatedLikes });
-        console.log("按讚狀態更新成功！");
     } catch (error) {
         console.error("更新按讚狀態時發生錯誤:", error);
         throw error;
