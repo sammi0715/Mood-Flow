@@ -59,7 +59,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
     });
 
     newPlayer.addListener("not_ready", ({ device_id }) => {
-      console.log("Device ID has gone offline", device_id);
+      console.log("Device ID has gone offline");
     });
 
     newPlayer.addListener("player_state_changed", (state) => {
@@ -300,7 +300,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
       } catch (error) {
-        console.error("播放歌曲時發生錯誤", error);
+        console.error("播放歌曲時發生錯誤");
         setAlertMessage("播放歌曲時發生錯誤，請稍後再試。");
       }
     },

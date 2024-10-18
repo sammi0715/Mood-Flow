@@ -114,7 +114,6 @@ function CommentSection({ diaryId, diaryOwnerId, currentUserId }) {
       await addReplyAndNotify(diaryId, parentCommentId, replyContent, replyToUserId);
       setReplyContent("");
       setReplyingTo(null);
-      console.log("回覆成功寫入！");
     } catch (error) {
       console.error("添加回覆時出錯:", error);
       setAlertMessage("添加回覆時出錯，請稍後再試。");
