@@ -58,9 +58,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
       setIsPlayerReady(true);
     });
 
-    newPlayer.addListener("not_ready", ({ device_id }) => {
-      console.log("Device ID has gone offline");
-    });
+    newPlayer.addListener("not_ready", ({ device_id }) => {});
 
     newPlayer.addListener("player_state_changed", (state) => {
       if (!state) {
@@ -74,7 +72,6 @@ export const SpotifyPlayerProvider = ({ children }) => {
 
     newPlayer.connect().then((success) => {
       if (success) {
-        console.log("The Web Playback SDK successfully connected to Spotify!");
       }
     });
 
@@ -300,7 +297,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
       } catch (error) {
-        console.error("播放歌曲時發生錯誤");
+        console.error("播放歌曲時發生錯誤", error);
         setAlertMessage("播放歌曲時發生錯誤，請稍後再試。");
       }
     },

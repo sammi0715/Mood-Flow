@@ -64,12 +64,15 @@ function Home() {
   const {
     register: loginRegister,
     handleSubmit: handleLoginSubmit,
+    setValue,
     formState: { errors: loginErrors },
   } = useForm();
 
   const handleLoginClick = () => {
     setShowLogin(true);
     setShowSignUp(false);
+    setValue("email", "admin@gmail.com");
+    setValue("password", "admintest");
   };
   const handleSignUpClick = () => {
     setShowLogin(false);

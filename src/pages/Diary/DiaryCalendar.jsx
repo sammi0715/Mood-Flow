@@ -1,14 +1,3 @@
-import React, { useEffect, useRef, useState } from "react";
-import { FaSpotify } from "react-icons/fa";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { TiThMenu } from "react-icons/ti";
-import { useNavigate, useParams } from "react-router-dom";
-import Alert from "../../components/alert";
-import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
-import { fetchDiaries } from "../../utils/firebase-data";
-import moodIcons from "../../utils/moodIcons";
-import Sidebar from "../Sidebar";
-
 import {
   addDays,
   addMonths,
@@ -21,8 +10,18 @@ import {
   startOfWeek,
   subMonths,
 } from "date-fns";
+import React, { useEffect, useRef, useState } from "react";
+import { FaSpotify } from "react-icons/fa";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { TiThMenu } from "react-icons/ti";
+import { useNavigate, useParams } from "react-router-dom";
+import { Tooltip } from "react-tooltip";
 import pencil from "../../assets/images/pencil.png";
-
+import Alert from "../../components/alert";
+import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
+import { fetchDiaries } from "../../utils/firebase-data";
+import moodIcons from "../../utils/moodIcons";
+import Sidebar from "../Sidebar";
 const monthsInChinese = {
   January: "一月",
   February: "二月",
@@ -237,12 +236,20 @@ function DiaryCalendar() {
             {/* Spotify 按鈕 */}
             <div className="flex-none">
               {!spotifyToken ? (
-                <button
-                  className="flex bg-gradient-to-tl from-[#33a9a0] to-[#c4e81d]  text-white text-sm lg:text-lg p-1 lg:px-4 lg:py-2 rounded-lg items-center"
-                  onClick={handleSpotifyLogin}
-                >
-                  連結 <FaSpotify className="ml-2 text-white w-4 h-4 xl:w-6 xl:h-6" />
-                </button>
+                <>
+                  <button
+                    className="flex bg-gradient-to-tl from-[#33a9a0] to-[#c4e81d]  text-white text-sm lg:text-lg p-1 lg:px-4 lg:py-2 rounded-lg items-center"
+                    onClick={handleSpotifyLogin}
+                    data-tooltip-id="spotify-tooltip"
+                  >
+                    連結 <FaSpotify className="ml-2 text-white w-4 h-4 xl:w-6 xl:h-6" />
+                  </button>
+                  <Tooltip
+                    id="spotify-tooltip"
+                    place="top"
+                    content="帳號：moodflow2024@gmail.com 密碼：2024@Moodflow"
+                  />
+                </>
               ) : (
                 <button className="flex bg-gradient-to-r from-[#35ce75] to-[#e5f046] text-white px-2 py-2 rounded-lg items-center text-base lg:text-xl">
                   已連結
