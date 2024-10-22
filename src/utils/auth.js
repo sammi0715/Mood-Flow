@@ -88,7 +88,7 @@ export const loginUser = async (email, password) => {
 export const getCurrentUser = () => {
     return auth.currentUser;
 };
-// 設定帳號名稱的邏輯
+
 export const handleSetUsername = async (username) => {
     const usernameRegex = /^[a-zA-Z0-9]{4,15}$/;
     if (!usernameRegex.test(username)) {
@@ -96,13 +96,13 @@ export const handleSetUsername = async (username) => {
     }
 
     try {
-        const user = auth.currentUser;  // 獲取當前登入的使用者
+        const user = auth.currentUser;
         if (!user) {
             throw new Error("無法獲取當前使用者資訊，請重新登入");
         }
         const userDocRef = doc(db, "users", user.uid);
 
-        // 更新 Firestore 中的 name 欄位
+
         await updateDoc(userDocRef, { name: username });
         return { success: true };
     } catch (error) {

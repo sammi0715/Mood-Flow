@@ -556,10 +556,10 @@ export const addCommentAndNotify = async (diaryId, commentContent, diaryOwnerId)
 
         const commentsRef = collection(db, `diaries/${diaryId}/comments`);
 
-        // 添加留言
+
         const commentDoc = await addDoc(commentsRef, {
             userId: currentUser.uid,
-            content: commentContent,  // 確保存入正確的留言內容
+            content: commentContent,
             createdAt: serverTimestamp(),
         });
 
@@ -595,7 +595,7 @@ export const addReplyAndNotify = async (diaryId, commentId, replyContent, replyT
 
         const repliesRef = collection(db, `diaries/${diaryId}/comments/${commentId}/replies`);
 
-        // 添加回覆
+
         await addDoc(repliesRef, {
             userId: currentUser.uid,
             content: replyContent,
