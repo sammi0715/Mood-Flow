@@ -1,11 +1,12 @@
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect } from "react";
 import { FaRegComment, FaSpotify } from "react-icons/fa";
 import { FiLoader } from "react-icons/fi";
 import { IoMdCloseCircle } from "react-icons/io";
 import { IoPauseCircle, IoPlayCircle } from "react-icons/io5";
 import { TiThMenu } from "react-icons/ti";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAppContext } from "../../AppContext";
 import CommentSection from "../../components/CommentSection";
 import LikeTooltip from "../../components/LikeTooltip";
 import Alert from "../../components/alert";
@@ -24,91 +25,8 @@ import {
 import moodIcons from "../../utils/moodIcons";
 import Sidebar from "../Sidebar";
 
-const initialState = {
-  diary: null,
-  loading: true,
-  isEditing: false,
-  updatedContent: "",
-  updatedMood: "",
-  updatedTrack: null,
-  updatedImages: [],
-  uploadedImages: [],
-  isMenuOpen: false,
-  alertMessage: null,
-  alertConfirm: null,
-  showConfirmDialog: false,
-  confirmMessage: "",
-  likes: [],
-  comments: [],
-  showCommentInput: {},
-};
-
-function diaryReducer(state, action) {
-  switch (action.type) {
-    case "SET_DIARY":
-      return {
-        ...state,
-        diary: action.payload,
-        updatedContent: action.payload.content,
-        updatedMood: action.payload.mood,
-        updatedTrack: action.payload.track,
-        updatedImages: action.payload.imageUrls || [],
-        loading: false,
-      };
-    case "SET_LOADING":
-      return { ...state, loading: action.payload };
-    case "SET_EDITING":
-      return { ...state, isEditing: action.payload };
-    case "UPDATE_CONTENT":
-      return { ...state, updatedContent: action.payload };
-    case "UPDATE_MOOD":
-      return { ...state, updatedMood: action.payload };
-    case "UPDATE_TRACK":
-      return { ...state, updatedTrack: action.payload };
-    case "ADD_IMAGE":
-      return { ...state, uploadedImages: [...state.uploadedImages, action.payload] };
-    case "REMOVE_IMAGE":
-      return {
-        ...state,
-        updatedImages: state.updatedImages.filter((_, index) => index !== action.payload),
-        uploadedImages: state.uploadedImages.filter((_, index) => index !== action.payload),
-      };
-    case "SET_LIKES":
-      return { ...state, likes: action.payload };
-    case "SET_COMMENTS":
-      return { ...state, comments: action.payload };
-    case "TOGGLE_COMMENT_INPUT":
-      return {
-        ...state,
-        showCommentInput: {
-          ...state.showCommentInput,
-          [action.payload]: !state.showCommentInput[action.payload],
-        },
-      };
-    case "SET_ALERT":
-      return {
-        ...state,
-        alertMessage: action.payload.message,
-        alertConfirm: action.payload.confirm,
-      };
-    case "SET_CONFIRM_DIALOG":
-      return {
-        ...state,
-        showConfirmDialog: action.payload.show,
-        confirmMessage: action.payload.message,
-        confirmAction: action.payload.action,
-      };
-    case "CLEAR_ALERT":
-      return { ...state, alertMessage: null, alertConfirm: null };
-    case "TOGGLE_MENU":
-      return { ...state, isMenuOpen: !state.isMenuOpen };
-    default:
-      return state;
-  }
-}
-
 function ViewDiaryEntry() {
-  const [state, dispatch] = useReducer(diaryReducer, initialState);
+  const { state, dispatch } = useAppContext();
   const { diaryId } = useParams();
   const navigate = useNavigate();
 
@@ -180,11 +98,11 @@ function ViewDiaryEntry() {
 
     await waitForSpotifyPlayerReady();
 
-    if (state.diary && state.diary.track) {
-      if (currentTrack?.uri === state.diary.track.uri) {
+    if (state.viewDiaryEntry.diary && state.viewDiaryEntry.diary.track) {
+      if (currentTrack?.uri === state.viewDiaryEntry.diary.track.uri) {
         await handlePlayPause();
       } else {
-        await handleTrackSelect(state.diary.track.uri);
+        await handleTrackSelect(state.viewDiaryEntry.diary.track.uri);
       }
     }
   };
@@ -210,25 +128,29 @@ function ViewDiaryEntry() {
     });
   };
   const handleSave = async () => {
-    if (!state.updatedContent.trim()) {
+    if (!state.viewDiaryEntry.updatedContent.trim()) {
       dispatch({ type: "SET_ALERT", payload: { message: "日記內容不能為空白！" } });
       return;
     }
-    if (!state.updatedMood) {
+    if (!state.viewDiaryEntry.updatedMood) {
       dispatch({ type: "SET_ALERT", payload: { message: "請選擇一個心情圖標！" } });
       return;
     }
 
-    const allImages = [...state.updatedImages, ...state.uploadedImages];
+    const allImages = [
+      ...state.viewDiaryEntry.updatedImages,
+      ...state.viewDiaryEntry.uploadedImages,
+    ];
     const updatedData = {
-      content: state.updatedContent.trim(),
-      mood: state.updatedMood,
-      track: state.updatedTrack,
+      content: state.viewDiaryEntry.updatedContent.trim(),
+      mood: state.viewDiaryEntry.updatedMood,
+      track: state.viewDiaryEntry.updatedTrack,
       imageUrls: allImages.length > 0 ? allImages : null,
     };
 
     try {
       await updateDiary(diaryId, updatedData);
+
       dispatch({
         type: "SET_ALERT",
         payload: {
@@ -239,6 +161,8 @@ function ViewDiaryEntry() {
         },
       });
       setTimeout(() => {
+        dispatch({ type: "CLEAR_ALERT" });
+        dispatch({ type: "SET_EDITING", payload: false });
         navigate(`/diary-calendar/${userId}`);
       }, 1000);
     } catch (error) {
@@ -264,6 +188,7 @@ function ViewDiaryEntry() {
             });
 
             setTimeout(() => {
+              dispatch({ type: "CLEAR_ALERT" });
               navigate(`/diary-calendar/${userId}`);
             }, 1000);
           } catch (error) {
@@ -280,7 +205,8 @@ function ViewDiaryEntry() {
   };
 
   const handleImageUploadWrapper = async (event) => {
-    const totalImages = state.updatedImages.length + state.uploadedImages.length;
+    const totalImages =
+      state.viewDiaryEntry.updatedImages.length + state.viewDiaryEntry.uploadedImages.length;
     const files = Array.from(event.target.files);
 
     if (totalImages + files.length > 3) {
@@ -289,8 +215,8 @@ function ViewDiaryEntry() {
     }
 
     try {
-      await handleImageUpload(event, state.uploadedImages, (newImageUrl) => {
-        dispatch({ type: "ADD_IMAGE", payload: newImageUrl });
+      await handleImageUpload(event, state.viewDiaryEntry.uploadedImages, (newImageUrl) => {
+        dispatch({ type: "ADD_UPDATED_IMAGE", payload: newImageUrl });
       });
     } catch (error) {
       dispatch({ type: "SET_ALERT", payload: { message: error.message } });
@@ -298,7 +224,7 @@ function ViewDiaryEntry() {
   };
 
   const handleRemoveImageWrapper = (index) => {
-    dispatch({ type: "REMOVE_IMAGE", payload: index });
+    dispatch({ type: "REMOVE_UPDATED_IMAGE", payload: index });
   };
 
   const handleToggleCommentInput = (diaryId) => {
@@ -309,7 +235,7 @@ function ViewDiaryEntry() {
     dispatch({ type: "SET_CONFIRM_DIALOG", payload: { show: false, message: "", action: null } });
   };
 
-  if (state.loading) {
+  if (state.common.loading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen bg-back">
         <FiLoader className="w-16 h-16 animate-spin spin-slow mb-4 text-light-orange" />
@@ -318,7 +244,7 @@ function ViewDiaryEntry() {
     );
   }
 
-  if (!state.diary) {
+  if (!state.viewDiaryEntry.diary) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen bg-back">
         <p className="text-2xl font-semibold text-light-orange">Diary not found.</p>
@@ -329,7 +255,7 @@ function ViewDiaryEntry() {
   return (
     <div className="flex flex-col min-h-screen">
       <Sidebar
-        isMenuOpen={state.isMenuOpen}
+        isMenuOpen={state.common.isMenuOpen}
         setIsMenuOpen={() => dispatch({ type: "TOGGLE_MENU" })}
       />
       <div className="flex-grow p-8 bg-back">
@@ -345,7 +271,7 @@ function ViewDiaryEntry() {
             <h2 className=" text-2xl md:text-4xl ">Diary</h2>
           </div>
           <div className="flex-none">
-            {state.isEditing && (
+            {state.viewDiaryEntry.isEditing && (
               <button
                 onClick={handleSave}
                 className="bg-amber-400 text-white px-2 text-lg lg:text-xl rounded"
@@ -357,22 +283,22 @@ function ViewDiaryEntry() {
 
           <div className="flex-none" style={{ width: "2rem" }}></div>
         </div>
-        <h3 className="text-xl text-center mb-4">{state.diary.date}</h3>
-        {state.isEditing ? (
+        <h3 className="text-xl text-center mb-4">{state.viewDiaryEntry.diary.date}</h3>
+        {state.viewDiaryEntry.isEditing ? (
           <div className="flex-grow max-w-4xl mx-auto  bg-light-beige bg-opacity-75 border-1 border border-gray-900 p-8 rounded-lg">
             <div className="mb-6">
-              {state.updatedMood && (
+              {state.viewDiaryEntry.updatedMood && (
                 <div className="mt-4 flex justify-center">
                   <img
-                    src={moodIcons[state.updatedMood]}
-                    alt={state.updatedMood}
+                    src={moodIcons[state.viewDiaryEntry.updatedMood]}
+                    alt={state.viewDiaryEntry.updatedMood}
                     className="h-16 w-16"
                   />
                 </div>
               )}
               <div className="flex justify-center">
                 <select
-                  value={state.updatedMood}
+                  value={state.viewDiaryEntry.updatedMood}
                   onChange={(e) => dispatch({ type: "UPDATE_MOOD", payload: e.target.value })}
                   className="border p-2 w-24 mt-2  flex text-center"
                 >
@@ -388,7 +314,7 @@ function ViewDiaryEntry() {
 
             <div className="mb-6">
               <textarea
-                value={state.updatedContent}
+                value={state.viewDiaryEntry.updatedContent}
                 onChange={(e) => dispatch({ type: "UPDATE_CONTENT", payload: e.target.value })}
                 className="border p-2 w-full break-all resize-none"
                 rows="5"
@@ -396,9 +322,9 @@ function ViewDiaryEntry() {
               />
             </div>
 
-            {state.updatedImages.length > 0 && (
+            {state.viewDiaryEntry.updatedImages.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
-                {state.updatedImages.map((url, index) => (
+                {state.viewDiaryEntry.updatedImages.map((url, index) => (
                   <div key={index} className="relative">
                     <img
                       src={url}
@@ -435,9 +361,9 @@ function ViewDiaryEntry() {
               </div>
             </div>
 
-            {state.uploadedImages.length > 0 && (
+            {state.viewDiaryEntry.uploadedImages.length > 0 && (
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                {state.uploadedImages.map((image, index) => (
+                {state.viewDiaryEntry.uploadedImages.map((image, index) => (
                   <div key={index} className="relative">
                     <img
                       src={image}
@@ -455,7 +381,7 @@ function ViewDiaryEntry() {
               </div>
             )}
 
-            {state.updatedTrack ? (
+            {state.viewDiaryEntry.updatedTrack ? (
               <div className="mb-6">
                 <button
                   onClick={() => dispatch({ type: "UPDATE_TRACK", payload: null })}
@@ -465,13 +391,13 @@ function ViewDiaryEntry() {
                 </button>
                 <div className="mt-2 flex items-center space-x-4">
                   <img
-                    src={state.updatedTrack.albumImageUrl}
-                    alt={state.updatedTrack.name}
+                    src={state.viewDiaryEntry.updatedTrack.albumImageUrl}
+                    alt={state.viewDiaryEntry.updatedTrack.name}
                     className="w-24 h-24 rounded-full"
                   />
                   <div>
-                    <p className="text-xl">{state.updatedTrack.name}</p>
-                    {state.updatedTrack.artists.join(", ")}
+                    <p className="text-xl">{state.viewDiaryEntry.updatedTrack.name}</p>
+                    {state.viewDiaryEntry.updatedTrack.artists.join(", ")}
                   </div>
                 </div>
               </div>
@@ -501,43 +427,46 @@ function ViewDiaryEntry() {
           <div className="max-w-5xl mx-auto mt-16 bg-light-beige bg-opacity-75 border-1 border border-gray-900 p-4 md:p-8 rounded-lg">
             <div className="flex items-center mb-4">
               <img
-                src={moodIcons[state.diary.mood]}
-                alt={state.diary.mood}
+                src={moodIcons[state.viewDiaryEntry.diary.mood]}
+                alt={state.viewDiaryEntry.diary.mood}
                 className="h-14 w-14 mr-2"
               />
-              <span className="text-lg">{state.diary.mood}</span>
+              <span className="text-lg">{state.viewDiaryEntry.diary.mood}</span>
             </div>
             <p className="text-gray-800 mb-6 text-base md:text-lg break-words whitespace-pre-wrap">
-              {state.diary.content}
+              {state.viewDiaryEntry.diary.content}
             </p>
-            {state.diary.imageUrls && state.diary.imageUrls.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
-                {state.diary.imageUrls.map((url, index) => (
-                  <img
-                    key={index}
-                    src={url}
-                    alt={`Uploaded ${index + 1}`}
-                    className="w-full h-auto object-cover rounded-lg"
-                  />
-                ))}
-              </div>
-            )}
-            {state.diary.track && (
+            {state.viewDiaryEntry.diary.imageUrls &&
+              state.viewDiaryEntry.diary.imageUrls.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
+                  {state.viewDiaryEntry.diary.imageUrls.map((url, index) => (
+                    <img
+                      key={index}
+                      src={url}
+                      alt={`Uploaded ${index + 1}`}
+                      className="w-full h-auto object-cover rounded-lg"
+                    />
+                  ))}
+                </div>
+              )}
+            {state.viewDiaryEntry.diary.track && (
               <div className="mt-10">
                 <h4 className="text-lg mb-4">Music</h4>
                 <div className="flex h-28 p-2 items-center space-x-4  mb-10  bg-gray-100 rounded-lg shadow-md">
                   <img
-                    src={state.diary.track.albumImageUrl}
-                    alt={state.diary.track.name}
+                    src={state.viewDiaryEntry.diary.track.albumImageUrl}
+                    alt={state.viewDiaryEntry.diary.track.name}
                     className="w-12 h-12 md:w-24 md:h-24 rounded-full"
                   />
                   <div className="flex-1">
-                    <p className="text-xs md:text-xl">{state.diary.track.name}</p>
-                    <p className="text-sm text-gray-400">{state.diary.track.artists.join(", ")} </p>
+                    <p className="text-xs md:text-xl">{state.viewDiaryEntry.diary.track.name}</p>
+                    <p className="text-sm text-gray-400">
+                      {state.viewDiaryEntry.diary.track.artists.join(", ")}{" "}
+                    </p>
                   </div>
 
                   <button onClick={handlePlayButton} className="p-4">
-                    {isPlaying && currentTrack?.uri === state.diary.track.uri ? (
+                    {isPlaying && currentTrack?.uri === state.viewDiaryEntry.diary.track.uri ? (
                       <IoPauseCircle size={40} className="text-green-500" />
                     ) : (
                       <IoPlayCircle size={40} className="text-green-500" />
@@ -558,17 +487,17 @@ function ViewDiaryEntry() {
             </button>
           </div>
         )}
-        {state.alertMessage && (
+        {state.common.alertMessage && (
           <Alert
-            message={state.alertMessage}
+            message={state.common.alertMessage}
             onClose={() => dispatch({ type: "CLEAR_ALERT" })}
-            onConfirm={state.alertConfirm}
+            onConfirm={state.common.alertConfirm}
           />
         )}
-        {state.showConfirmDialog && (
+        {state.common.showConfirmDialog && (
           <ConfirmDialog
-            message={state.confirmMessage}
-            onConfirm={state.confirmAction}
+            message={state.common.confirmMessage}
+            onConfirm={state.common.confirmAction}
             onCancel={handleConfirmDialogCancel}
           />
         )}
@@ -576,7 +505,7 @@ function ViewDiaryEntry() {
           <div className="likes mb-4 flex items-center">
             <LikeTooltip
               diaryId={diaryId}
-              likes={state.likes}
+              likes={state.viewDiaryEntry.likes}
               userId={userId}
               toggleLike={toggleLikeDiary}
             />
@@ -585,14 +514,14 @@ function ViewDiaryEntry() {
               onClick={() => handleToggleCommentInput(diaryId)}
             >
               <FaRegComment />
-              <span className="ml-2">{state.comments.length}</span>
+              <span className="ml-2">{state.viewDiaryEntry.comments.length}</span>
             </button>
           </div>
 
-          {state.showCommentInput[diaryId] && (
+          {state.community.showCommentInput[diaryId] && (
             <CommentSection
               diaryId={diaryId}
-              diaryOwnerId={state.diary.userId}
+              diaryOwnerId={state.viewDiaryEntry.diary.userId}
               currentUserId={userId}
             />
           )}

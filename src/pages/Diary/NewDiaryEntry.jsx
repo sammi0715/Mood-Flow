@@ -1,9 +1,10 @@
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import React, { useReducer } from "react";
+import React, { useEffect } from "react";
 import { FaSpotify } from "react-icons/fa";
 import { IoMdCloseCircle } from "react-icons/io";
 import { TiThMenu } from "react-icons/ti";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAppContext } from "../../AppContext";
 import angry from "../../assets/images/angry.png";
 import anxiety from "../../assets/images/anxiety.png";
 import blue from "../../assets/images/blue.png";
@@ -19,51 +20,9 @@ import { useSpotifyPlayer } from "../../utils/SpotifyPlayerContext";
 import { auth, db } from "../../utils/firebase";
 import { handleImageUpload, simplifyTrack } from "../../utils/firebase-data";
 import Sidebar from "../Sidebar";
-const initialState = {
-  selectedMood: null,
-  diaryContent: "",
-  uploadedImages: [],
-  selectedTrack: null,
-  loading: false,
-  alertMessage: null,
-  alertConfirm: null,
-  isMenuOpen: false,
-};
-
-function diaryReducer(state, action) {
-  switch (action.type) {
-    case "SET_MOOD":
-      return { ...state, selectedMood: action.payload };
-    case "SET_CONTENT":
-      return { ...state, diaryContent: action.payload };
-    case "ADD_IMAGE":
-      return { ...state, uploadedImages: [...state.uploadedImages, action.payload] };
-    case "REMOVE_IMAGE":
-      return {
-        ...state,
-        uploadedImages: state.uploadedImages.filter((_, index) => index !== action.payload),
-      };
-    case "SET_TRACK":
-      return { ...state, selectedTrack: action.payload };
-    case "SET_LOADING":
-      return { ...state, loading: action.payload };
-    case "SET_ALERT":
-      return {
-        ...state,
-        alertMessage: action.payload.message,
-        alertConfirm: action.payload.confirm,
-      };
-    case "CLEAR_ALERT":
-      return { ...state, alertMessage: null, alertConfirm: null };
-    case "TOGGLE_MENU":
-      return { ...state, isMenuOpen: !state.isMenuOpen };
-    default:
-      return state;
-  }
-}
 
 function NewDiaryEntry() {
-  const [state, dispatch] = useReducer(diaryReducer, initialState);
+  const { state, dispatch } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -79,9 +38,9 @@ function NewDiaryEntry() {
 
   const handleSelectTrackForDiary = (track) => {
     if (track === null) {
-      dispatch({ type: "SET_TRACK", payload: null });
+      dispatch({ type: "SET_SELECTED_TRACK", payload: null });
     } else {
-      dispatch({ type: "SET_TRACK", payload: simplifyTrack(track) });
+      dispatch({ type: "SET_SELECTED_TRACK", payload: simplifyTrack(track) });
     }
   };
 
@@ -96,14 +55,25 @@ function NewDiaryEntry() {
     { img: sad, label: "悲傷" },
     { img: cry, label: "哭泣" },
   ];
+  useEffect(() => {
+    dispatch({ type: "SET_SELECTED_MOOD", payload: null });
+  }, []);
 
-  const handleMoodSelect = (mood) => dispatch({ type: "SET_MOOD", payload: mood });
+  useEffect(() => {
+    dispatch({ type: "RESET_NEW_DIARY_STATE" });
+
+    return () => {
+      dispatch({ type: "RESET_NEW_DIARY_STATE" });
+    };
+  }, []);
+
+  const handleMoodSelect = (mood) => dispatch({ type: "SET_SELECTED_MOOD", payload: mood });
 
   const handleDiaryChange = (event) =>
-    dispatch({ type: "SET_CONTENT", payload: event.target.value });
+    dispatch({ type: "SET_DIARY_CONTENT", payload: event.target.value });
 
   const handleSubmit = async () => {
-    if (!state.selectedMood || !state.diaryContent.trim()) {
+    if (!state.newDiaryEntry.selectedMood || !state.newDiaryEntry.diaryContent.trim()) {
       dispatch({ type: "SET_ALERT", payload: { message: "請選擇一個心情並輸入日記內容。" } });
       return;
     }
@@ -120,11 +90,12 @@ function NewDiaryEntry() {
     try {
       const diaryEntry = {
         date: selectedDate,
-        mood: state.selectedMood,
-        content: state.diaryContent,
+        mood: state.newDiaryEntry.selectedMood,
+        content: state.newDiaryEntry.diaryContent,
         userId: user.uid,
-        track: state.selectedTrack || null,
-        imageUrls: state.uploadedImages.length > 0 ? state.uploadedImages : null,
+        track: state.newDiaryEntry.selectedTrack || null,
+        imageUrls:
+          state.newDiaryEntry.uploadedImages.length > 0 ? state.newDiaryEntry.uploadedImages : null,
         createdAt: serverTimestamp(),
       };
 
@@ -138,6 +109,7 @@ function NewDiaryEntry() {
         },
       });
       setTimeout(() => {
+        dispatch({ type: "CLEAR_ALERT" });
         navigate(`/diary-calendar/${user.uid}`);
       }, 1000);
     } catch (error) {
@@ -150,8 +122,8 @@ function NewDiaryEntry() {
 
   const handleImageUploadWrapper = async (event) => {
     try {
-      await handleImageUpload(event, state.uploadedImages, (newImageUrl) => {
-        dispatch({ type: "ADD_IMAGE", payload: newImageUrl });
+      await handleImageUpload(event, state.newDiaryEntry.uploadedImages, (newImageUrl) => {
+        dispatch({ type: "ADD_UPLOADED_IMAGE", payload: newImageUrl });
       });
     } catch (error) {
       dispatch({ type: "SET_ALERT", payload: { message: error.message } });
@@ -159,20 +131,25 @@ function NewDiaryEntry() {
   };
 
   const handleRemoveImageWrapper = (index) => {
-    dispatch({ type: "REMOVE_IMAGE", payload: index });
+    dispatch({ type: "REMOVE_UPLOADED_IMAGE", payload: index });
   };
 
   const handlePlayTrack = async (track) => {
     try {
-      await handleTrackSelect(track.uri);
+      if (currentTrack?.uri === track.uri) {
+        await handlePlayPause();
+      } else {
+        await handleTrackSelect(track.uri);
+      }
     } catch (error) {
       console.error("播放歌曲時發生錯誤", error);
+      dispatch({ type: "SET_ALERT", payload: { message: "播放出錯，請稍後再試" } });
     }
   };
   return (
     <div className="flex-1 pb-12">
       <Sidebar
-        isMenuOpen={state.isMenuOpen}
+        isMenuOpen={state.common.isMenuOpen}
         setIsMenuOpen={() => dispatch({ type: "TOGGLE_MENU" })}
       />
 
@@ -194,16 +171,20 @@ function NewDiaryEntry() {
             <div
               key={mood.label}
               className={`flex flex-col items-center cursor-pointer transition-transform duration-200 ${
-                state.selectedMood === mood.label ? "scale-125" : "scale-100"
+                state.newDiaryEntry.selectedMood === mood.label ? "scale-125" : "scale-100"
               }`}
               onClick={() => handleMoodSelect(mood.label)}
             >
               <img
                 src={mood.img}
-                className={`h-16 ${state.selectedMood === mood.label ? "h-20" : "h-16"}`}
+                className={`h-16 ${
+                  state.newDiaryEntry.selectedMood === mood.label ? "h-20" : "h-16"
+                }`}
                 alt={mood.label}
               />
-              {state.selectedMood === mood.label && <p className="mt-2 text-lg">{mood.label}</p>}
+              {state.newDiaryEntry.selectedMood === mood.label && (
+                <p className="mt-2 text-lg">{mood.label}</p>
+              )}
             </div>
           ))}
         </div>
@@ -211,7 +192,7 @@ function NewDiaryEntry() {
         <textarea
           className="w-full bg-gray-100 h-64 rounded-lg p-4 resize-none  break-all overflow-wrap break-word"
           placeholder="輸入今天的日記..."
-          value={state.diaryContent}
+          value={state.newDiaryEntry.diaryContent}
           onChange={handleDiaryChange}
         />
 
@@ -233,9 +214,9 @@ function NewDiaryEntry() {
             <p className="text-sm text-gray-500">最多上傳三張圖片</p>
           </div>
 
-          {state.uploadedImages.length > 0 && (
+          {state.newDiaryEntry.uploadedImages && state.newDiaryEntry.uploadedImages.length > 0 && (
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {state.uploadedImages.map((image, index) => (
+              {state.newDiaryEntry.uploadedImages.map((image, index) => (
                 <div key={index} className="relative">
                   <img
                     src={image}
@@ -274,20 +255,20 @@ function NewDiaryEntry() {
         <div className="flex justify-center mt-6">
           <button
             className={`bg-yellow-400 text-black px-8 py-2 rounded-lg transition-colors duration-200 ${
-              state.loading ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-500"
+              state.newDiaryEntry.loading ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-500"
             }`}
             onClick={handleSubmit}
-            disabled={state.loading}
+            disabled={state.newDiaryEntry.loading}
           >
-            {state.loading ? "保存中..." : "送出"}
+            {state.common.loading ? "保存中..." : "送出"}
           </button>
         </div>
       </div>
-      {state.alertMessage && (
+      {state.common.alertMessage && (
         <Alert
-          message={state.alertMessage}
+          message={state.common.alertMessage}
           onClose={() => dispatch({ type: "CLEAR_ALERT" })}
-          onConfirm={state.alertConfirm}
+          onConfirm={state.common.alertConfirm}
         />
       )}
     </div>

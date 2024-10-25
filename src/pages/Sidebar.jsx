@@ -42,7 +42,10 @@ function Sidebar({ isMenuOpen, setIsMenuOpen }) {
     try {
       await signOut(auth);
       localStorage.removeItem("user_uid");
-
+      localStorage.removeItem("spotify_device_id");
+      localStorage.removeItem("spotify_token");
+      localStorage.removeItem("spotify_refresh_token");
+      localStorage.removeItem("code_verifier");
       navigate("/");
       window.location.reload();
     } catch (error) {

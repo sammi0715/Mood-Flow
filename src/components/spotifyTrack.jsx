@@ -78,12 +78,9 @@ export const SpotifyTracks = ({
   };
 
   const handlePlayTrack = async (track) => {
-    if (currentTrack?.id === track.id) {
-      onPlayPause();
-    } else {
-      await onPlayTrack(track);
-    }
+    await onPlayTrack(track);
   };
+
   const handleLoadMore = () => {
     setVisibleTrackCount((prevCount) => prevCount + 5);
   };
