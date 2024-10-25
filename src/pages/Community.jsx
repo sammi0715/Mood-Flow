@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { FaRegComment, FaSearch } from "react-icons/fa";
 import { IoIosArrowBack, IoIosArrowForward, IoIosClose } from "react-icons/io";
 import { IoCloseCircle } from "react-icons/io5";
 import { RiUser5Fill } from "react-icons/ri";
 import { TiThMenu } from "react-icons/ti";
 import { useParams } from "react-router-dom";
+import { useAppContext } from "../AppContext";
 import Music from "../assets/images/music-note.png";
 import CommentSection from "../components/CommentSection";
 import LikeTooltip from "../components/LikeTooltip";
@@ -25,74 +26,70 @@ import {
   toggleLikeDiary,
 } from "../utils/firebase-data";
 import moodIcons from "../utils/moodIcons";
+
 function Community() {
-  const [friends, setFriends] = useState([]);
-  const [isFriendsListOpen, setIsFriendsListOpen] = useState(false);
-  const [friendRequests, setFriendRequests] = useState([]);
-  const [selectedFriend, setSelectedFriend] = useState(null);
-  const [selectedFriendDiaries, setSelectedFriendDiaries] = useState([]);
-  const [loadingDiaries, setLoadingDiaries] = useState(false);
-  const [error, setError] = useState(null);
-  const [diaryComments, setDiaryComments] = useState({});
-  const [likeStatuses, setLikeStatuses] = useState({});
-  const [showCommentInput, setShowCommentInput] = useState({});
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [alertMessage, setAlertMessage] = useState(null);
-  const [alertConfirm, setAlertConfirm] = useState(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [confirmMessage, setConfirmMessage] = useState("");
-  const [onConfirmAction, setOnConfirmAction] = useState(null);
+  const { state, dispatch } = useAppContext();
 
   const { userId } = useParams();
 
   useEffect(() => {
     if (userId) {
       const unsubscribe = listenToFriends(userId, (updatedFriends) => {
-        setFriends(updatedFriends);
+        dispatch({ type: "SET_FRIENDS", payload: updatedFriends });
 
-        if (selectedFriend) {
-          const isStillFriend = updatedFriends.some((friend) => friend.id === selectedFriend.id);
+        if (state.community.selectedFriend) {
+          const isStillFriend = updatedFriends.some(
+            (friend) => friend.id === state.community.selectedFriend.id
+          );
           if (!isStillFriend) {
-            setSelectedFriend(null);
-            setAlertMessage("你已被移除好友，無法繼續查看內容");
+            dispatch({ type: "SET_SELECTED_FRIEND", payload: null });
+            dispatch({
+              type: "SET_ALERT",
+              payload: { message: "你已被移除好友，無法繼續查看內容" },
+            });
           }
         }
       });
 
       return () => unsubscribe();
     }
-  }, [userId, selectedFriend]);
+  }, [userId, state.community.selectedFriend]);
 
   useEffect(() => {
     if (userId) {
-      const unsubscribe = listenToFriendRequests(userId, setFriendRequests);
+      const unsubscribe = listenToFriendRequests(userId, (requests) => {
+        dispatch({ type: "SET_FRIEND_REQUESTS", payload: requests });
+      });
       return () => unsubscribe();
     }
   }, [userId]);
 
   useEffect(() => {
-    if (selectedFriend && userId) {
+    if (state.community.selectedFriend && userId) {
       const fetchSelectedFriendDiaries = async () => {
-        setLoadingDiaries(true);
-        setError(null);
+        dispatch({ type: "SET_LOADING_DIARIES", payload: true });
+        dispatch({ type: "SET_ERROR", payload: null });
         try {
-          const diaries = await fetchDiariesWithPermission(userId, selectedFriend.userId);
-          setSelectedFriendDiaries(diaries);
+          const diaries = await fetchDiariesWithPermission(
+            userId,
+            state.community.selectedFriend.userId
+          );
+          dispatch({ type: "SET_SELECTED_FRIEND_DIARIES", payload: diaries });
 
           diaries.forEach((diary) => {
             const diaryRef = doc(db, "diaries", diary.id);
             const unsubscribeLikes = onSnapshot(diaryRef, (snapshot) => {
               if (snapshot.exists()) {
                 const diaryData = snapshot.data();
-                setLikeStatuses((prev) => ({
-                  ...prev,
-                  [diary.id]: diaryData.likes || [],
-                }));
+                dispatch({
+                  type: "SET_LIKE_STATUSES",
+                  payload: { [diary.id]: diaryData.likes || [] },
+                });
               }
             });
 
             const unsubscribeComments = listenToComments(diary.id, (updatedComments) => {
-              setDiaryComments((prev) => ({ ...prev, [diary.id]: updatedComments }));
+              dispatch({ type: "SET_DIARY_COMMENTS", payload: { [diary.id]: updatedComments } });
             });
 
             return () => {
@@ -102,29 +99,26 @@ function Community() {
           });
         } catch (err) {
           console.error("獲取好友日記出錯:", err);
-          setError("獲取好友日記出錯，請稍後再試。");
+          dispatch({ type: "SET_ERROR", payload: "獲取好友日記出錯，請稍後再試。" });
         } finally {
-          setLoadingDiaries(false);
+          dispatch({ type: "SET_LOADING_DIARIES", payload: false });
         }
       };
 
       fetchSelectedFriendDiaries();
     } else {
-      setSelectedFriendDiaries([]);
+      dispatch({ type: "SET_SELECTED_FRIEND_DIARIES", payload: [] });
     }
-  }, [selectedFriend, userId]);
+  }, [state.community.selectedFriend, userId]);
 
   const handleSelectFriend = async (friend) => {
     try {
       const friendUserData = await fetchUserData(friend.userId);
 
-      setSelectedFriend({
-        ...friend,
-        ...friendUserData,
-      });
+      dispatch({ type: "SET_SELECTED_FRIEND", payload: { ...friend, ...friendUserData } });
     } catch (err) {
       console.error("獲取數據時出錯：", err);
-      setError("獲取好友資料時出錯，請稍後再試。");
+      dispatch({ type: "SET_ERROR", payload: "獲取好友資料時出錯，請稍後再試。" });
     }
   };
 
@@ -132,7 +126,7 @@ function Community() {
     const currentUser = auth.currentUser;
 
     if (!currentUser) {
-      setAlertMessage("用戶未登錄");
+      dispatch({ type: "SET_ALERT", payload: { message: "用戶未登錄" } });
       return;
     }
 
@@ -140,104 +134,128 @@ function Community() {
       await acceptFriendRequest(request.userId, currentUser.uid);
       await deleteFriendRequest(currentUser.uid, request.id);
 
-      setAlertMessage("雙方已成為好友");
+      dispatch({ type: "SET_ALERT", payload: { message: "雙方已成為好友" } });
 
       const updatedFriends = await fetchFriends(currentUser.uid);
-      setFriends(updatedFriends);
+      dispatch({ type: "SET_FRIENDS", payload: updatedFriends });
 
-      setFriendRequests((prevRequests) => prevRequests.filter((req) => req.id !== request.id));
+      dispatch({
+        type: "SET_FRIEND_REQUESTS",
+        payload: state.community.friendRequests.filter((req) => req.id !== request.id),
+      });
     } catch (error) {
       console.error("接受好友邀請時錯誤：", error);
-      setError("接受好友邀請時錯誤，請稍後再試。");
+      dispatch({ type: "SET_ERROR", payload: "接受好友邀請時錯誤，請稍後再試。" });
     }
   };
 
   const handleDeleteFriend = (friendId) => {
-    setConfirmMessage("確定要刪除這位好友嗎？");
-    setOnConfirmAction(() => async () => {
-      try {
-        await deleteFriend(userId, friendId);
-        setAlertMessage("好友已刪除");
+    dispatch({
+      type: "SET_CONFIRM_DIALOG",
+      payload: {
+        show: true,
+        message: "確定要刪除這位好友嗎？",
+        action: async () => {
+          try {
+            await deleteFriend(userId, friendId);
+            dispatch({ type: "SET_ALERT", payload: { message: "好友已刪除" } });
 
-        // 更新好友列表
-        const updatedFriends = friends.filter((friend) => friend.id !== friendId);
-        setFriends(updatedFriends);
+            const updatedFriends = state.community.friends.filter(
+              (friend) => friend.id !== friendId
+            );
+            dispatch({ type: "SET_FRIENDS", payload: updatedFriends });
 
-        // 檢查並清空已選中的好友
-        if (selectedFriend?.id === friendId) {
-          setSelectedFriend(null);
-        }
-      } catch (error) {
-        console.error("刪除好友時發生錯誤:", error);
-        setAlertMessage("刪除好友時發生錯誤，請稍後再試。");
-      } finally {
-        setShowConfirmDialog(false);
-      }
+            if (state.community.selectedFriend?.id === friendId) {
+              dispatch({ type: "SET_SELECTED_FRIEND", payload: null });
+            }
+          } catch (error) {
+            console.error("刪除好友時發生錯誤:", error);
+            dispatch({
+              type: "SET_ALERT",
+              payload: { message: "刪除好友時發生錯誤，請稍後再試。" },
+            });
+          } finally {
+            dispatch({
+              type: "SET_CONFIRM_DIALOG",
+              payload: { show: false, message: "", action: null },
+            });
+          }
+        },
+      },
     });
-    setShowConfirmDialog(true);
   };
 
   const handleRejectFriendRequest = (requestId) => {
-    setConfirmMessage("確定要拒絕這個好友邀請嗎？");
-    setOnConfirmAction(() => async () => {
-      try {
-        await deleteFriendRequest(userId, requestId);
-        setAlertMessage("好友邀請已刪除！");
-      } catch (err) {
-        console.error("刪除好友邀請失敗：", err);
-        setError("刪除好友邀請失敗，請稍後再試。");
-      } finally {
-        setShowConfirmDialog(false);
-      }
+    dispatch({
+      type: "SET_CONFIRM_DIALOG",
+      payload: {
+        show: true,
+        message: "確定要拒絕這個好友邀請嗎？",
+        action: async () => {
+          try {
+            await deleteFriendRequest(userId, requestId);
+            dispatch({ type: "SET_ALERT", payload: { message: "好友邀請已刪除！" } });
+          } catch (err) {
+            console.error("刪除好友邀請失敗：", err);
+            dispatch({ type: "SET_ERROR", payload: "刪除好友邀請失敗，請稍後再試。" });
+          } finally {
+            dispatch({
+              type: "SET_CONFIRM_DIALOG",
+              payload: { show: false, message: "", action: null },
+            });
+          }
+        },
+      },
     });
-    setShowConfirmDialog(true);
   };
 
   const handleToggleCommentInput = (diaryId) => {
-    setShowCommentInput((prev) => ({
-      ...prev,
-      [diaryId]: !prev[diaryId],
-    }));
+    dispatch({ type: "TOGGLE_COMMENT_INPUT", payload: diaryId });
   };
 
   const handleToggleLike = async (diaryId) => {
     try {
-      const currentLikes = likeStatuses[diaryId] || [];
+      const currentLikes = state.community.likeStatuses[diaryId] || [];
       await toggleLikeDiary(diaryId, currentLikes);
 
       const updatedLikes = currentLikes.includes(auth.currentUser.uid)
         ? currentLikes.filter((id) => id !== auth.currentUser.uid)
         : [...currentLikes, auth.currentUser.uid];
-      setLikeStatuses((prev) => ({ ...prev, [diaryId]: updatedLikes }));
+      dispatch({ type: "UPDATE_LIKE_STATUS", payload: { diaryId, likes: updatedLikes } });
     } catch (error) {
       console.error("更新按讚狀態時出錯:", error);
     }
   };
 
   const toggleFriendsList = () => {
-    setIsFriendsListOpen(!isFriendsListOpen);
+    dispatch({ type: "TOGGLE_FRIENDS_LIST" });
   };
 
   return (
     <div className="min-h-screen flex flex-row-reverse">
-      {alertMessage && (
+      {state.common.alertMessage && (
         <Alert
-          message={alertMessage}
-          onClose={() => setAlertMessage(null)}
-          onConfirm={alertConfirm}
+          message={state.common.alertMessage}
+          onClose={() => dispatch({ type: "CLEAR_ALERT" })}
+          onConfirm={state.common.alertConfirm}
         />
       )}
-      {showConfirmDialog && (
+      {state.common.showConfirmDialog && (
         <Confirm
-          message={confirmMessage}
-          onConfirm={onConfirmAction}
-          onCancel={() => setShowConfirmDialog(false)}
+          message={state.common.confirmMessage}
+          onConfirm={state.common.confirmAction}
+          onCancel={() =>
+            dispatch({
+              type: "SET_CONFIRM_DIALOG",
+              payload: { show: false, message: "", action: null },
+            })
+          }
         />
       )}
 
       <div
         className={`fixed  right-0 h-screen bg-light-green transition-transform duration-300 ${
-          isFriendsListOpen ? "translate-x-full" : "translate-x-0"
+          state.community.isFriendsListOpen ? "translate-x-full" : "translate-x-0"
         } w-48 lg:w-60 p-4`}
       >
         <button
@@ -254,34 +272,38 @@ function Community() {
             點擊上方搜尋好友
           </h3>
           <ul>
-            {friends.map((friend) => (
-              <li
-                key={friend.id}
-                className="cursor-pointer min-w-[92px] p-1 hover:bg-light-yellow hover:rounded-md items-center flex justify-between text-base"
-                onClick={() => handleSelectFriend(friend)}
-              >
-                {friend.name}
-                <button
-                  className="ml-2 text-white rounded "
-                  onClick={() => handleDeleteFriend(friend.id)}
+            {state.community.friends &&
+              state.community.friends.length > 0 &&
+              state.community.friends.map((friend) => (
+                <li
+                  key={friend.id}
+                  className="cursor-pointer min-w-[92px] p-1 hover:bg-light-yellow hover:rounded-md items-center flex justify-between text-base"
+                  onClick={() => handleSelectFriend(friend)}
                 >
-                  <IoIosClose className="text-black w-4 h-4 lg:w-6 lg:h-6" />
-                </button>
-              </li>
-            ))}
+                  {friend.name}
+                  <button
+                    className="ml-2 text-white rounded "
+                    onClick={() => handleDeleteFriend(friend.id)}
+                  >
+                    <IoIosClose className="text-black w-4 h-4 lg:w-6 lg:h-6" />
+                  </button>
+                </li>
+              ))}
           </ul>
         </div>
       </div>
 
       <div className="flex-1 overflow-auto">
-        {/* 好友邀請通知 */}
         <div className="mb-6">
-          <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+          <Sidebar
+            isMenuOpen={state.common.isMenuOpen}
+            setIsMenuOpen={() => dispatch({ type: "TOGGLE_MENU" })}
+          />
           <div className="p-8">
             <div className="flex items-center space-x-3 justify-between">
               <TiThMenu
                 className="w-6 h-6 lg:h-8 lg:w-8 mr-4 cursor-pointer text-gray-600 hover:text-gray-800"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => dispatch({ type: "TOGGLE_MENU" })}
               />
               <h2 className="text-lg lg:text-2xl ml-4 text-left flex-1">好友邀請</h2>
               <button className="text-2xl flex items-center" onClick={toggleFriendsList}>
@@ -290,8 +312,8 @@ function Community() {
               </button>
             </div>
             <ul className="mt-4">
-              {friendRequests.length > 0 ? (
-                friendRequests.map((request) => (
+              {state.community.friendRequests && state.community.friendRequests.length > 0 ? (
+                state.community.friendRequests.map((request) => (
                   <li
                     key={request.id}
                     className="mb-4 flex justify-between items-center bg-white p-2 rounded-lg shadow-md xl:w-[45%] lg:w-[45%] md:w-[45%]"
@@ -321,29 +343,30 @@ function Community() {
               )}
             </ul>
 
-            {/* 好友日記動態 */}
-            {selectedFriend ? (
+            {state.community.selectedFriend ? (
               <div>
-                <h2 className="text-lg lg:text-xl mb-4 mt-10">{selectedFriend.name} 的日記動態</h2>
-                {loadingDiaries ? (
+                <h2 className="text-lg lg:text-xl mb-4 mt-10">
+                  {state.community.selectedFriend.name} 的日記動態
+                </h2>
+                {state.community.loadingDiaries ? (
                   <p>正在載入日記...</p>
-                ) : error ? (
-                  <p className="text-red-500">{error}</p>
-                ) : selectedFriendDiaries.length > 0 ? (
+                ) : state.error ? (
+                  <p className="text-red-500">{state.error}</p>
+                ) : state.community.selectedFriendDiaries.length > 0 ? (
                   <ul>
-                    {selectedFriendDiaries.map((diary) => (
+                    {state.community.selectedFriendDiaries.map((diary) => (
                       <li key={diary.id} className="mb-2 p-4 bg-light-beige rounded">
                         <div className="flex items-center mb-2">
-                          {selectedFriend.profile_pic ? (
+                          {state.community.selectedFriend.profile_pic ? (
                             <img
-                              src={selectedFriend.profile_pic}
-                              alt={`${selectedFriend.name} profile pic`}
+                              src={state.community.selectedFriend.profile_pic}
+                              alt={`${state.community.selectedFriend.name} profile pic`}
                               className="w-12 h-12 rounded-full mr-2"
                             />
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-light-beige mr-2"></div>
                           )}
-                          <p>{selectedFriend.name}</p>
+                          <p>{state.community.selectedFriend.name}</p>
                         </div>
                         <div className="flex items-center mt-2">
                           <img
@@ -366,7 +389,7 @@ function Community() {
                         <p className="mt-4 mb-4 text-sm lg:text-base break-words whitespace-pre-wrap">
                           {diary.content}
                         </p>
-                        {/* 顯示圖片 */}
+
                         {diary.imageUrls && diary.imageUrls.length > 0 && (
                           <div className="mt-4">
                             {diary.imageUrls.map((url, index) => (
@@ -383,7 +406,7 @@ function Community() {
                         <div className="flex items-center space-x-4">
                           <LikeTooltip
                             diaryId={diary.id}
-                            likes={likeStatuses[diary.id] || []}
+                            likes={state.community.likeStatuses?.[diary.id] || []}
                             userId={auth.currentUser?.uid}
                             toggleLike={handleToggleLike}
                           />
@@ -393,11 +416,13 @@ function Community() {
                             onClick={() => handleToggleCommentInput(diary.id)}
                           >
                             <FaRegComment />
-                            <span className="ml-2">{diaryComments[diary.id]?.length || 0}</span>
+                            <span className="ml-2">
+                              {state.community.diaryComments?.[diary.id]?.length || 0}
+                            </span>
                           </button>
                         </div>
 
-                        {showCommentInput[diary.id] && (
+                        {state.community.showCommentInput[diary.id] && (
                           <CommentSection
                             diaryId={diary.id}
                             diaryOwnerId={diary.userId}
@@ -420,7 +445,9 @@ function Community() {
               </p>
             )}
 
-            {error && <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">{error}</div>}
+            {state.common.error && (
+              <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">{state.common.error}</div>
+            )}
           </div>
         </div>
       </div>
