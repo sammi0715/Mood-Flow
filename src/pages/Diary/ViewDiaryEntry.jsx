@@ -46,12 +46,14 @@ function ViewDiaryEntry() {
   const moodOptions = ["開心", "快樂", "興奮", "平靜", "焦慮", "生氣", "憂鬱", "悲傷", "哭泣"];
 
   useEffect(() => {
+    dispatch({ type: "RESET_VIEW_DIARY_STATE" });
     const fetchDiary = async () => {
       try {
         const diaryRef = doc(db, "diaries", diaryId);
         const diarySnap = await getDoc(diaryRef);
         if (diarySnap.exists()) {
           dispatch({ type: "SET_DIARY", payload: diarySnap.data() });
+          dispatch({ type: "SET_EDITING", payload: false });
         } else {
           dispatch({ type: "SET_ALERT", payload: { message: "找不到該日記。" } });
           navigate("/diary-calendar");
@@ -258,7 +260,7 @@ function ViewDiaryEntry() {
         isMenuOpen={state.common.isMenuOpen}
         setIsMenuOpen={() => dispatch({ type: "TOGGLE_MENU" })}
       />
-      <div className="flex-grow p-8 bg-back">
+      <div className="flex-grow p-6 bg-back">
         <div className="flex items-center justify-between mb-6">
           <div className="flex-none">
             <TiThMenu
@@ -285,7 +287,7 @@ function ViewDiaryEntry() {
         </div>
         <h3 className="text-xl text-center mb-4">{state.viewDiaryEntry.diary.date}</h3>
         {state.viewDiaryEntry.isEditing ? (
-          <div className="flex-grow max-w-4xl mx-auto  bg-light-beige bg-opacity-75 border-1 border border-gray-900 p-8 rounded-lg">
+          <div className="flex-grow max-w-4xl mx-auto bg-light-beige bg-opacity-75 border-1 border border-gray-900 p-8 rounded-lg">
             <div className="mb-6">
               {state.viewDiaryEntry.updatedMood && (
                 <div className="mt-4 flex justify-center">
