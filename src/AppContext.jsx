@@ -231,7 +231,25 @@ function appReducer(state, action) {
         },
       };
 
-    // ViewDiaryEntry actions
+    case "RESET_VIEW_DIARY_STATE":
+      return {
+        ...state,
+        viewDiaryEntry: {
+          ...initialState.viewDiaryEntry,
+          diary: null,
+          loading: true,
+          isEditing: false,
+          updatedContent: "",
+          updatedMood: "",
+          updatedTrack: null,
+          updatedImages: [],
+          uploadedImages: [],
+          isFriendsListOpen: false,
+          likes: [],
+          comments: [],
+          showCommentInput: {},
+        },
+      };
     case "SET_DIARY":
       return {
         ...state,

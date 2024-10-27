@@ -96,7 +96,7 @@ export const SpotifyTracks = ({
   }
 
   return (
-    <div className="space-y-4 p-5">
+    <div className="space-y-4">
       <h3 className="text-2xl mb-2">Music</h3>
       <div>
         <div className="mb-4">

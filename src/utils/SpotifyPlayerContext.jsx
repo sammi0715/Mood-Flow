@@ -58,7 +58,9 @@ export const SpotifyPlayerProvider = ({ children }) => {
       setIsPlayerReady(true);
     });
 
-    newPlayer.addListener("not_ready", ({ device_id }) => {});
+    newPlayer.addListener("not_ready", ({ device_id }) => {
+      setIsPlayerReady(false);
+    });
 
     newPlayer.addListener("player_state_changed", (state) => {
       if (!state) {
@@ -164,11 +166,16 @@ export const SpotifyPlayerProvider = ({ children }) => {
     },
     [initializePlayer]
   );
+
   useEffect(() => {
+    if (!spotifyToken) return;
+
     if (window.Spotify) {
       initializePlayer();
     } else {
-      window.onSpotifyWebPlaybackSDKReady = initializePlayer;
+      window.onSpotifyWebPlaybackSDKReady = () => {
+        initializePlayer();
+      };
       const script = document.createElement("script");
       script.src = "https://sdk.scdn.co/spotify-player.js";
       script.async = true;
@@ -178,7 +185,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
     return () => {
       window.onSpotifyWebPlaybackSDKReady = null;
     };
-  }, [initializePlayer, spotifyToken, exchangeToken]);
+  }, [spotifyToken]);
 
   const refreshToken = useCallback(async () => {
     const refresh_token = localStorage.getItem("spotify_refresh_token");
@@ -296,6 +303,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+        setIsPlaying(true);
       } catch (error) {
         console.error("播放歌曲時發生錯誤", error);
         setAlertMessage("播放歌曲時發生錯誤，請稍後再試。");

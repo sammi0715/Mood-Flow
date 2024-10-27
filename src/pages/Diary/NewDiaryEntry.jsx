@@ -56,11 +56,13 @@ function NewDiaryEntry() {
     { img: cry, label: "哭泣" },
   ];
   useEffect(() => {
-    dispatch({ type: "SET_SELECTED_MOOD", payload: null });
-  }, []);
+    const initializeState = () => {
+      dispatch({ type: "RESET_NEW_DIARY_STATE" });
 
-  useEffect(() => {
-    dispatch({ type: "RESET_NEW_DIARY_STATE" });
+      dispatch({ type: "SET_SELECTED_MOOD", payload: null });
+    };
+
+    initializeState();
 
     return () => {
       dispatch({ type: "RESET_NEW_DIARY_STATE" });
