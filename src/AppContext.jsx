@@ -51,6 +51,8 @@ function appReducer(state, action) {
   switch (action.type) {
     case "TOGGLE_MENU":
       return { ...state, common: { ...state.common, isMenuOpen: !state.common.isMenuOpen } };
+    case "RESET_MENU":
+      return { ...state, common: { ...state.common, isMenuOpen: false } };
     case "SET_ALERT":
       return {
         ...state,
