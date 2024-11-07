@@ -57,8 +57,8 @@ function NewDiaryEntry() {
   ];
   useEffect(() => {
     const initializeState = () => {
+      dispatch({ type: "RESET_MENU" });
       dispatch({ type: "RESET_NEW_DIARY_STATE" });
-
       dispatch({ type: "SET_SELECTED_MOOD", payload: null });
     };
 
