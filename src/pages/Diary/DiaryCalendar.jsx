@@ -44,6 +44,7 @@ function DiaryCalendar() {
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertConfirm, setAlertConfirm] = useState(null);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const { userId } = useParams();
   const navigate = useNavigate();
   const throttleTimeout = useRef(null);
@@ -61,6 +62,10 @@ function DiaryCalendar() {
       try {
         const diaryData = await fetchDiaries(userId);
         setDiaries(diaryData);
+
+        if (userId === "DnfzA0ojJobuDqR90LgDUxVbFvM2") {
+          setShowTooltip(true);
+        }
       } catch (error) {
         console.error("Error loading diaries: ", error);
         setAlertMessage(`加載日記時出錯：${error.message}`);
@@ -244,11 +249,13 @@ function DiaryCalendar() {
                   >
                     連結 <FaSpotify className="ml-2 text-white w-4 h-4 xl:w-6 xl:h-6" />
                   </button>
-                  <Tooltip
-                    id="spotify-tooltip"
-                    place="top"
-                    content="帳號：moodflow2024@gmail.com 密碼：2024@Moodflow"
-                  />
+                  {showTooltip && (
+                    <Tooltip
+                      id="spotify-tooltip"
+                      place="top"
+                      content="帳號：moodflow2024@gmail.com 密碼：2024@Moodflow"
+                    />
+                  )}
                 </>
               ) : (
                 <button className="flex bg-gradient-to-r from-[#35ce75] to-[#e5f046] text-white px-2 py-2 rounded-lg items-center text-base lg:text-xl">

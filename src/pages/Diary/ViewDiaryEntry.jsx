@@ -47,6 +47,7 @@ function ViewDiaryEntry() {
 
   useEffect(() => {
     dispatch({ type: "RESET_VIEW_DIARY_STATE" });
+    dispatch({ type: "RESET_MENU" });
     const fetchDiary = async () => {
       try {
         const diaryRef = doc(db, "diaries", diaryId);
